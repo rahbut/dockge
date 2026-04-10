@@ -9,7 +9,7 @@ RUN go build -x -o ./extra/healthcheck ./extra/healthcheck.go
 ############################################
 # Base Image (replaces louislam/dockge:base)
 ############################################
-FROM node:22-bookworm-slim AS base
+FROM node:24-bookworm-slim AS base
 RUN apt-get update && apt-get install --yes --no-install-recommends \
     curl \
     ca-certificates \

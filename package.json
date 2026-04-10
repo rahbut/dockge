@@ -3,7 +3,7 @@
     "version": "1.5.1",
     "type": "module",
     "engines": {
-        "node": ">= 22.14.0"
+        "node": ">= 24.0.0"
     },
     "scripts": {
         "fmt": "eslint --ext .ts,.vue . --fix",
