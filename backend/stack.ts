@@ -461,11 +461,38 @@ export class Stack {
         return exitCode;
     }
 
+    /**
+     * Check if any service in the compose file uses a `build` directive.
+     */
+    hasBuildServices() : boolean {
+        try {
+            const doc = yaml.parse(this.composeYAML);
+            if (doc && doc.services) {
+                for (const service of Object.values(doc.services)) {
+                    if ((service as Record<string, unknown>).build !== undefined) {
+                        return true;
+                    }
+                }
+            }
+        } catch (e) {
+            // If we can't parse the YAML, assume no build services
+        }
+        return false;
+    }
+
     async update(socket: DockgeSocket) {
         const terminalName = getComposeTerminalName(socket.endpoint, this.name);
         let exitCode = await Terminal.exec(this.server, socket, terminalName, "docker", this.getComposeOptions("pull"), this.path);
         if (exitCode !== 0) {
             throw new Error("Failed to pull, please check the terminal output for more information.");
+        }
+
+        // For services with a `build` directive, rebuild images (--pull refreshes base images)
+        if (this.hasBuildServices()) {
+            exitCode = await Terminal.exec(this.server, socket, terminalName, "docker", this.getComposeOptions("build", "--pull"), this.path);
+            if (exitCode !== 0) {
+                throw new Error("Failed to build, please check the terminal output for more information.");
+            }
         }
 
         // If the stack is not running, we don't need to restart it
