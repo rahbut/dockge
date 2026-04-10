@@ -17,9 +17,6 @@
                     <label><input v-model="settings.checkUpdate" type="checkbox" @change="saveSettings()" /> {{ $t("Show update if available") }}</label>
                 </div>
 
-                <div class="form-check">
-                    <label><input v-model="settings.checkBeta" type="checkbox" :disabled="!settings.checkUpdate" @change="saveSettings()" /> {{ $t("Also check beta release") }}</label>
-                </div>
             </div>
         </div>
     </div>
