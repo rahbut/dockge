@@ -59,13 +59,19 @@ jobs:
 
       - name: Report image size
         run: |
-          echo "## Image Size Report" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Platform | Compressed Size |" >> $GITHUB_STEP_SUMMARY
-          echo "|----------|----------------|" >> $GITHUB_STEP_SUMMARY
+          manifest=$(docker buildx imagetools inspect ghcr.io/rahbut/dockge:latest --raw)
+          header="| Platform | Compressed Size |"
+          separator="|----------|----------------|"
+          echo "## Image Size Report" | tee -a $GITHUB_STEP_SUMMARY
+          echo "" | tee -a $GITHUB_STEP_SUMMARY
+          echo "$header" | tee -a $GITHUB_STEP_SUMMARY
+          echo "$separator" | tee -a $GITHUB_STEP_SUMMARY
           for arch in amd64 arm64; do
-            size=$(docker buildx imagetools inspect ghcr.io/rahbut/dockge:latest --raw \
-              | jq -r --arg arch "$arch" '.manifests[] | select(.platform.architecture == ($arch | split("/")[0]) and (.platform.variant // "") == ($arch | split("/")[1] // "")) | .size' \
-              | numfmt --to=iec-i --suffix=B 2>/dev/null || echo "N/A")
-            echo "| $arch | $size |" >> $GITHUB_STEP_SUMMARY
+            raw=$(echo "$manifest" | jq --arg arch "$arch" '[.manifests[] | select(.platform.architecture == $arch)] | .[0].size // empty')
+            if [ -n "$raw" ]; then
+              size=$(echo "$raw" | numfmt --to=iec-i --suffix=B)
+            else
+              size="N/A"
+            fi
+            echo "| $arch | $size |" | tee -a $GITHUB_STEP_SUMMARY
           done
