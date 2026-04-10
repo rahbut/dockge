@@ -35,6 +35,9 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
 # Build
 ############################################
 FROM base AS build
+RUN apt-get update && apt-get install --yes --no-install-recommends \
+    python3 make g++ \
+    && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY --chown=node:node  ./package.json ./package.json
 COPY --chown=node:node  ./package-lock.json ./package-lock.json
