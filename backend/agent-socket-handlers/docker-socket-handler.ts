@@ -238,6 +238,64 @@ export class DockerSocketHandler extends AgentSocketHandler {
             }
         });
 
+        // checkStackUpdates - check a single stack for image updates
+        agentSocket.on("checkStackUpdates", async (stackName : unknown, callback) => {
+            try {
+                checkLogin(socket);
+
+                if (typeof(stackName) !== "string") {
+                    throw new ValidationError("Stack name must be a string");
+                }
+
+                const stack = await Stack.getStack(server, stackName);
+                const updateDetails = await stack.checkUpdates();
+                server.sendStackList();
+                callbackResult({
+                    ok: true,
+                    updateDetails,
+                    updateAvailable: stack._updateAvailable,
+                }, callback);
+            } catch (e) {
+                callbackError(e, callback);
+            }
+        });
+
+        // checkAllStacksUpdates - check all managed stacks for image updates
+        agentSocket.on("checkAllStacksUpdates", async (callback) => {
+            try {
+                checkLogin(socket);
+
+                const stackList = await Stack.getStackList(server, true);
+                const allResults: Record<string, { updateAvailable: boolean | null; updateDetails: Record<string, { image: string; updateAvailable: boolean; error?: string }> }> = {};
+
+                for (const [stackName, stack] of stackList) {
+                    if (!stack.isManagedByDockge) {
+                        continue;
+                    }
+                    try {
+                        const updateDetails = await stack.checkUpdates();
+                        allResults[stackName] = {
+                            updateAvailable: stack._updateAvailable,
+                            updateDetails,
+                        };
+                    } catch (e) {
+                        allResults[stackName] = {
+                            updateAvailable: null,
+                            updateDetails: {},
+                        };
+                    }
+                }
+
+                server.sendStackList();
+                callbackResult({
+                    ok: true,
+                    allResults,
+                }, callback);
+            } catch (e) {
+                callbackError(e, callback);
+            }
+        });
+
         // getExternalNetworkList
         agentSocket.on("getDockerNetworkList", async (callback) => {
             try {

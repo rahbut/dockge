@@ -9,6 +9,16 @@
                 <div v-if="!isEditMode">
                     <span class="badge me-1" :class="bgStyle">{{ status }}</span>
 
+                    <span v-if="updateStatus && updateStatus.updateAvailable" class="badge me-1 bg-warning" :title="$t('updateAvailable')">
+                        <font-awesome-icon icon="arrow-alt-circle-up" class="me-1" />{{ $t('updateAvailable') }}
+                    </span>
+                    <span v-else-if="updateStatus && !updateStatus.error && updateStatus.updateAvailable === false" class="badge me-1 bg-success" :title="$t('upToDate')">
+                        <font-awesome-icon icon="check-circle" class="me-1" />{{ $t('upToDate') }}
+                    </span>
+                    <span v-else-if="updateStatus && updateStatus.error" class="badge me-1 bg-secondary" :title="updateStatus.error">
+                        {{ $t(updateStatus.error) || updateStatus.error }}
+                    </span>
+
                     <a v-for="port in (ports ?? envsubstService.ports)" :key="port" :href="parsePort(port).url" target="_blank">
                         <span class="badge me-1 bg-secondary">{{ parsePort(port).display }}</span>
                     </a>
@@ -162,6 +172,10 @@ export default defineComponent({
         },
         ports: {
             type: Array,
+            default: null
+        },
+        updateStatus: {
+            type: Object,
             default: null
         }
     },

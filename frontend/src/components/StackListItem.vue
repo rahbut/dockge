@@ -3,6 +3,7 @@
         <Uptime :stack="stack" :fixed-width="true" class="me-2" />
         <div class="title">
             <span>{{ stackName }}</span>
+            <font-awesome-icon v-if="stack.updateAvailable === true" icon="arrow-alt-circle-up" class="update-badge ms-1" :title="$t('updateAvailable')" />
             <div v-if="$root.agentCount > 1" class="endpoint">{{ endpointDisplay }}</div>
         </div>
     </router-link>
@@ -176,6 +177,11 @@ export default {
 
 .dim {
     opacity: 0.5;
+}
+
+.update-badge {
+    color: #f0ad4e;
+    font-size: 0.75em;
 }
 
 </style>

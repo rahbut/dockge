@@ -26,6 +26,24 @@
                         </div>
                     </div>
 
+                    <!-- Check for Updates -->
+                    <div class="shadow-box big-padding text-center mb-4">
+                        <button class="btn btn-normal" :disabled="checkingUpdates" @click="checkAllUpdates">
+                            <font-awesome-icon icon="arrows-rotate" :class="{ 'fa-spin': checkingUpdates }" class="me-1" />
+                            {{ checkingUpdates ? $t('checkingForUpdates') : $t('checkForUpdates') }}
+                        </button>
+                        <div v-if="updateCheckDone" class="mt-2">
+                            <span v-if="updatesAvailableNum > 0" class="text-warning">
+                                <font-awesome-icon icon="arrow-alt-circle-up" class="me-1" />
+                                {{ $t('stacksHaveUpdates', [updatesAvailableNum, totalCheckedNum]) }}
+                            </span>
+                            <span v-else class="text-success">
+                                <font-awesome-icon icon="check-circle" class="me-1" />
+                                {{ $t('noUpdatesFound') }}
+                            </span>
+                        </div>
+                    </div>
+
                     <!-- Docker Run -->
                     <h2 class="mb-3">{{ $t("Docker Run") }}</h2>
                     <div class="mb-3">
@@ -126,7 +144,11 @@ export default {
                 url: "http://",
                 username: "",
                 password: "",
-            }
+            },
+            checkingUpdates: false,
+            updateCheckDone: false,
+            updatesAvailableNum: 0,
+            totalCheckedNum: 0,
         };
     },
 
@@ -139,6 +161,16 @@ export default {
         },
         exitedNum() {
             return this.getStatusNum("exited");
+        },
+        updatesAvailableFromStore() {
+            let count = 0;
+            for (let stackName in this.$root.completeStackList) {
+                const stack = this.$root.completeStackList[stackName];
+                if (stack.updateAvailable === true) {
+                    count++;
+                }
+            }
+            return count;
         },
     },
 
@@ -209,6 +241,24 @@ export default {
                 }
             }
             return num;
+        },
+
+        checkAllUpdates() {
+            this.checkingUpdates = true;
+            this.updateCheckDone = false;
+
+            this.$root.emitAgent("", "checkAllStacksUpdates", (res) => {
+                this.checkingUpdates = false;
+                if (res.ok) {
+                    this.updateCheckDone = true;
+                    const results = res.allResults;
+                    const stackNames = Object.keys(results);
+                    this.totalCheckedNum = stackNames.length;
+                    this.updatesAvailableNum = stackNames.filter(name => results[name].updateAvailable === true).length;
+                } else {
+                    this.$root.toastRes(res);
+                }
+            });
         },
 
         convertDockerRun() {

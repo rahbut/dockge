@@ -30,6 +30,9 @@ export class Stack {
     protected _composeFileName: string = "compose.yaml";
     protected server: DockgeServer;
 
+    _updateAvailable: boolean | null = null;
+    _updateDetails: Record<string, { image: string; updateAvailable: boolean; error?: string }> | null = null;
+
     protected combinedTerminal? : Terminal;
 
     protected static managedStackList: Map<string, Stack> = new Map();
@@ -75,6 +78,7 @@ export class Stack {
             composeYAML: this.composeYAML,
             composeENV: this.composeENV,
             primaryHostname,
+            updateDetails: this._updateDetails,
         };
     }
 
@@ -86,6 +90,7 @@ export class Stack {
             isManagedByDockge: this.isManagedByDockge,
             composeFileName: this._composeFileName,
             endpoint,
+            updateAvailable: this._updateAvailable,
         };
     }
 
@@ -474,7 +479,106 @@ export class Stack {
         if (exitCode !== 0) {
             throw new Error("Failed to restart, please check the terminal output for more information.");
         }
+
+        // Clear update flags after a successful update
+        this._updateAvailable = null;
+        this._updateDetails = null;
+
         return exitCode;
+    }
+
+    async checkUpdates() : Promise<Record<string, { image: string; updateAvailable: boolean; error?: string }>> {
+        const results: Record<string, { image: string; updateAvailable: boolean; error?: string }> = {};
+
+        let composeYAML;
+        try {
+            composeYAML = yaml.parse(this.composeYAML);
+        } catch (e) {
+            log.warn("checkUpdates", `Failed to parse compose YAML for ${this.name}`);
+            return results;
+        }
+
+        if (!composeYAML || !composeYAML.services) {
+            return results;
+        }
+
+        for (const [serviceName, service] of Object.entries(composeYAML.services)) {
+            const svc = service as Record<string, unknown>;
+            const image = svc.image as string | undefined;
+
+            if (!image) {
+                results[serviceName] = { image: "(local build)", updateAvailable: false, error: "localBuild" };
+                continue;
+            }
+
+            try {
+                // Get local image digest
+                let localDigest = "";
+                try {
+                    const localRes = await childProcessAsync.spawn("docker", [
+                        "image", "inspect", "--format", "{{index .RepoDigests 0}}", image
+                    ], { encoding: "utf-8" });
+                    localDigest = (localRes.stdout?.toString().trim()) || "";
+                } catch (e) {
+                    // Image might not be pulled yet
+                    results[serviceName] = { image, updateAvailable: false, error: "notPulled" };
+                    continue;
+                }
+
+                // Get remote manifest digest
+                let remoteDigest = "";
+                try {
+                    // Get the raw manifest from registry via buildx imagetools
+                    const digestRes = await childProcessAsync.spawn("docker", [
+                        "buildx", "imagetools", "inspect", image, "--raw"
+                    ], { encoding: "utf-8" });
+                    const rawManifest = digestRes.stdout?.toString().trim() || "";
+
+                    if (rawManifest) {
+                        // Compute the sha256 of the raw manifest
+                        const crypto = await import("crypto");
+                        const hash = crypto.createHash("sha256").update(rawManifest).digest("hex");
+                        remoteDigest = `sha256:${hash}`;
+                    }
+                } catch (e) {
+                    // Fallback: try plain docker manifest inspect
+                    try {
+                        const fallbackRes = await childProcessAsync.spawn("docker", [
+                            "manifest", "inspect", image
+                        ], { encoding: "utf-8" });
+                        const manifestStr = fallbackRes.stdout?.toString().trim() || "";
+                        if (manifestStr) {
+                            const crypto = await import("crypto");
+                            const hash = crypto.createHash("sha256").update(manifestStr).digest("hex");
+                            remoteDigest = `sha256:${hash}`;
+                        }
+                    } catch (e2) {
+                        results[serviceName] = { image, updateAvailable: false, error: "registryError" };
+                        continue;
+                    }
+                }
+
+                // Compare digests
+                // localDigest format: "registry/image@sha256:abc123"
+                // remoteDigest format: "sha256:abc123"
+                const localSha = localDigest.includes("@") ? localDigest.split("@")[1] : localDigest;
+                const hasUpdate = remoteDigest !== "" && localSha !== "" && localSha !== remoteDigest;
+
+                results[serviceName] = { image, updateAvailable: hasUpdate };
+            } catch (e) {
+                if (e instanceof Error) {
+                    results[serviceName] = { image, updateAvailable: false, error: e.message };
+                } else {
+                    results[serviceName] = { image, updateAvailable: false, error: "unknown error" };
+                }
+            }
+        }
+
+        // Set stack-level flag
+        this._updateDetails = results;
+        this._updateAvailable = Object.values(results).some(r => r.updateAvailable);
+
+        return results;
     }
 
     async joinCombinedTerminal(socket: DockgeSocket) {

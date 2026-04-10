@@ -41,6 +41,11 @@
                         {{ $t("updateStack") }}
                     </button>
 
+                    <button v-if="!isEditMode" class="btn btn-normal" :disabled="processing || checkingUpdates" @click="checkStackUpdates">
+                        <font-awesome-icon icon="arrows-rotate" :class="{ 'fa-spin': checkingUpdates }" class="me-1" />
+                        {{ checkingUpdates ? $t('checkingForUpdates') : $t('checkForUpdates') }}
+                    </button>
+
                     <button v-if="!isEditMode && active" class="btn btn-normal" :disabled="processing" @click="stopStack">
                         <font-awesome-icon icon="stop" class="me-1" />
                         {{ $t("stopStack") }}
@@ -130,6 +135,7 @@
                             :first="name === Object.keys(jsonConfig.services)[0]"
                             :status="serviceStatusList[name]?.state"
                             :ports="serviceStatusList[name]?.ports"
+                            :update-status="updateDetails ? updateDetails[name] : null"
                         />
                     </div>
 
@@ -333,6 +339,8 @@ export default {
 
             },
             serviceStatusList: {},
+            updateDetails: null,
+            checkingUpdates: false,
             isEditMode: false,
             submitted: false,
             showDeleteDialog: false,
@@ -565,6 +573,7 @@ export default {
             this.$root.emitAgent(this.endpoint, "getStack", this.stack.name, (res) => {
                 if (res.ok) {
                     this.stack = res.stack;
+                    this.updateDetails = res.stack.updateDetails || null;
                     this.yamlCodeChange();
                     this.processing = false;
                     this.bindTerminal();
@@ -673,6 +682,22 @@ export default {
             this.$root.emitAgent(this.endpoint, "updateStack", this.stack.name, (res) => {
                 this.processing = false;
                 this.$root.toastRes(res);
+                if (res.ok) {
+                    this.updateDetails = null;
+                }
+            });
+        },
+
+        checkStackUpdates() {
+            this.checkingUpdates = true;
+
+            this.$root.emitAgent(this.endpoint, "checkStackUpdates", this.stack.name, (res) => {
+                this.checkingUpdates = false;
+                if (res.ok) {
+                    this.updateDetails = res.updateDetails;
+                } else {
+                    this.$root.toastRes(res);
+                }
             });
         },
 
