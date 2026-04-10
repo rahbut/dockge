@@ -268,7 +268,7 @@ export class DockerSocketHandler extends AgentSocketHandler {
                 const stackList = await Stack.getStackList(server, true);
                 const allResults: Record<string, { updateAvailable: boolean | null; updateDetails: Record<string, { image: string; updateAvailable: boolean; error?: string }> }> = {};
 
-                for (const [stackName, stack] of stackList) {
+                for (const [ stackName, stack ] of stackList) {
                     if (!stack.isManagedByDockge) {
                         continue;
                     }
