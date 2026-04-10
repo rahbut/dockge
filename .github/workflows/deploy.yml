@@ -56,3 +56,16 @@ jobs:
           --push
         env:
           DOCKER_BUILDKIT: 1
+
+      - name: Report image size
+        run: |
+          echo "## Image Size Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Platform | Compressed Size |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|----------------|" >> $GITHUB_STEP_SUMMARY
+          for arch in amd64 arm64 "arm/v7"; do
+            size=$(docker buildx imagetools inspect ghcr.io/rahbut/dockge:latest --raw \
+              | jq -r --arg arch "$arch" '.manifests[] | select(.platform.architecture == ($arch | split("/")[0]) and (.platform.variant // "") == ($arch | split("/")[1] // "")) | .size' \
+              | numfmt --to=iec-i --suffix=B 2>/dev/null || echo "N/A")
+            echo "| $arch | $size |" >> $GITHUB_STEP_SUMMARY
+          done
