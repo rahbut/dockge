@@ -514,6 +514,143 @@ export class Stack {
         return exitCode;
     }
 
+    /**
+     * Parse a Docker image reference into registry, repository, and tag.
+     */
+    static parseImageRef(image: string) : { registry: string; repository: string; tag: string } {
+        let registry = "registry-1.docker.io";
+        let repository = image;
+        let tag = "latest";
+
+        // Split off tag/digest
+        const colonIdx = repository.lastIndexOf(":");
+        const slashIdx = repository.lastIndexOf("/");
+        if (colonIdx > slashIdx) {
+            tag = repository.substring(colonIdx + 1);
+            repository = repository.substring(0, colonIdx);
+        }
+
+        // Detect custom registry (contains a dot or colon before the first slash)
+        const firstSlash = repository.indexOf("/");
+        if (firstSlash > 0) {
+            const prefix = repository.substring(0, firstSlash);
+            if (prefix.includes(".") || prefix.includes(":")) {
+                registry = prefix;
+                repository = repository.substring(firstSlash + 1);
+            }
+        }
+
+        // Docker Hub library images: "nginx" → "library/nginx"
+        if (registry === "registry-1.docker.io" && !repository.includes("/")) {
+            repository = "library/" + repository;
+        }
+
+        return {
+            registry,
+            repository,
+            tag,
+        };
+    }
+
+    /**
+     * Get the current manifest digest for an image tag from its registry.
+     * Uses the OCI distribution HTTP API with a HEAD request.
+     */
+    static async getRegistryDigest(registry: string, repository: string, tag: string) : Promise<string> {
+        const https = await import("https");
+        const http = await import("http");
+
+        // Get auth token
+        let token = "";
+        if (registry === "registry-1.docker.io") {
+            token = await new Promise<string>((resolve, reject) => {
+                https.get(`https://auth.docker.io/token?service=registry.docker.io&scope=repository:${repository}:pull`, (res) => {
+                    let data = "";
+                    res.on("data", (chunk: Buffer) => {
+                        data += chunk;
+                    });
+                    res.on("end", () => {
+                        try {
+                            resolve(JSON.parse(data).token || "");
+                        } catch (e) {
+                            reject(new Error("Failed to parse Docker Hub auth token"));
+                        }
+                    });
+                    res.on("error", reject);
+                });
+            });
+        } else if (registry === "ghcr.io") {
+            token = await new Promise<string>((resolve, reject) => {
+                https.get(`https://ghcr.io/token?scope=repository:${repository}:pull`, (res) => {
+                    let data = "";
+                    res.on("data", (chunk: Buffer) => {
+                        data += chunk;
+                    });
+                    res.on("end", () => {
+                        try {
+                            resolve(JSON.parse(data).token || "");
+                        } catch (e) {
+                            reject(new Error("Failed to parse GHCR auth token"));
+                        }
+                    });
+                    res.on("error", reject);
+                });
+            });
+        }
+
+        // HEAD request for manifest digest
+        const registryUrl = registry.includes("://") ? registry : `https://${registry}`;
+        const manifestUrl = `${registryUrl}/v2/${repository}/manifests/${tag}`;
+
+        return new Promise<string>((resolve, reject) => {
+            const parsedUrl = new URL(manifestUrl);
+            const transport = parsedUrl.protocol === "https:" ? https : http;
+
+            const req = transport.request(manifestUrl, {
+                method: "HEAD",
+                headers: {
+                    "Accept": [
+                        "application/vnd.oci.image.index.v1+json",
+                        "application/vnd.docker.distribution.manifest.list.v2+json",
+                        "application/vnd.oci.image.manifest.v1+json",
+                        "application/vnd.docker.distribution.manifest.v2+json",
+                    ].join(", "),
+                    ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+                },
+            }, (res) => {
+                // Follow redirects
+                if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+                    const redirectReq = transport.request(res.headers.location, {
+                        method: "HEAD",
+                        headers: {
+                            "Accept": [
+                                "application/vnd.oci.image.index.v1+json",
+                                "application/vnd.docker.distribution.manifest.list.v2+json",
+                                "application/vnd.oci.image.manifest.v1+json",
+                                "application/vnd.docker.distribution.manifest.v2+json",
+                            ].join(", "),
+                        },
+                    }, (redirectRes) => {
+                        const digest = redirectRes.headers["docker-content-digest"] as string || "";
+                        resolve(digest);
+                    });
+                    redirectReq.on("error", reject);
+                    redirectReq.end();
+                    return;
+                }
+
+                const digest = res.headers["docker-content-digest"] as string || "";
+                if (res.statusCode !== 200) {
+                    reject(new Error(`Registry returned status ${res.statusCode}`));
+                    return;
+                }
+                resolve(digest);
+            });
+            req.on("error", reject);
+            req.end();
+        });
+    }
+
     async checkUpdates() : Promise<Record<string, { image: string; updateAvailable: boolean; error?: string }>> {
         const results: Record<string, { image: string; updateAvailable: boolean; error?: string }> = {};
 
@@ -529,7 +666,7 @@ export class Stack {
             return results;
         }
 
-        for (const [serviceName, service] of Object.entries(composeYAML.services)) {
+        for (const [ serviceName, service ] of Object.entries(composeYAML.services)) {
             const svc = service as Record<string, unknown>;
             const image = svc.image as string | undefined;
 
@@ -543,7 +680,7 @@ export class Stack {
             }
 
             try {
-                // Get local image digest
+                // Get local image digest from RepoDigests
                 let localDigest = "";
                 try {
                     const localRes = await childProcessAsync.spawn("docker", [
@@ -551,7 +688,6 @@ export class Stack {
                     ], { encoding: "utf-8" });
                     localDigest = (localRes.stdout?.toString().trim()) || "";
                 } catch (e) {
-                    // Image might not be pulled yet
                     results[serviceName] = {
                         image,
                         updateAvailable: false,
@@ -560,49 +696,31 @@ export class Stack {
                     continue;
                 }
 
-                // Get remote manifest digest
-                let remoteDigest = "";
-                try {
-                    // Get the raw manifest from registry via buildx imagetools
-                    const digestRes = await childProcessAsync.spawn("docker", [
-                        "buildx", "imagetools", "inspect", image, "--raw"
-                    ], { encoding: "utf-8" });
-                    const rawManifest = digestRes.stdout?.toString().trim() || "";
-
-                    if (rawManifest) {
-                        // Compute the sha256 of the raw manifest
-                        const crypto = await import("crypto");
-                        const hash = crypto.createHash("sha256").update(rawManifest).digest("hex");
-                        remoteDigest = `sha256:${hash}`;
-                    }
-                } catch (e) {
-                    // Fallback: try plain docker manifest inspect
-                    try {
-                        const fallbackRes = await childProcessAsync.spawn("docker", [
-                            "manifest", "inspect", image
-                        ], { encoding: "utf-8" });
-                        const manifestStr = fallbackRes.stdout?.toString().trim() || "";
-                        if (manifestStr) {
-                            const crypto = await import("crypto");
-                            const hash = crypto.createHash("sha256").update(manifestStr).digest("hex");
-                            remoteDigest = `sha256:${hash}`;
-                        }
-                    } catch (e2) {
-                        results[serviceName] = {
-                            image,
-                            updateAvailable: false,
-                            error: "registryError",
-                        };
-                        continue;
-                    }
+                // Extract the sha from the local RepoDigest (format: "repo@sha256:abc123")
+                const localSha = localDigest.includes("@") ? localDigest.split("@")[1] : localDigest;
+                if (!localSha) {
+                    results[serviceName] = {
+                        image,
+                        updateAvailable: false,
+                        error: "noLocalDigest",
+                    };
+                    continue;
                 }
 
-                // Compare digests
-                // localDigest format: "registry/image@sha256:abc123"
-                // remoteDigest format: "sha256:abc123"
-                const localSha = localDigest.includes("@") ? localDigest.split("@")[1] : localDigest;
-                const hasUpdate = remoteDigest !== "" && localSha !== "" && localSha !== remoteDigest;
+                // Query the registry for the current digest of this tag
+                const ref = Stack.parseImageRef(image);
+                const remoteDigest = await Stack.getRegistryDigest(ref.registry, ref.repository, ref.tag);
 
+                if (!remoteDigest) {
+                    results[serviceName] = {
+                        image,
+                        updateAvailable: false,
+                        error: "registryError",
+                    };
+                    continue;
+                }
+
+                const hasUpdate = localSha !== remoteDigest;
                 results[serviceName] = {
                     image,
                     updateAvailable: hasUpdate,

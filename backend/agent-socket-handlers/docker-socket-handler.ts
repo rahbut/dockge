@@ -249,7 +249,7 @@ export class DockerSocketHandler extends AgentSocketHandler {
 
                 const stack = await Stack.getStack(server, stackName);
                 const updateDetails = await stack.checkUpdates();
-                server.sendStackList();
+                server.sendStackList(true);
                 callbackResult({
                     ok: true,
                     updateDetails,
@@ -286,7 +286,7 @@ export class DockerSocketHandler extends AgentSocketHandler {
                     }
                 }
 
-                server.sendStackList();
+                server.sendStackList(true);
                 callbackResult({
                     ok: true,
                     allResults,
