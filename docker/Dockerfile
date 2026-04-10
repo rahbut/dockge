@@ -62,8 +62,3 @@ HEALTHCHECK --interval=60s --timeout=30s --start-period=60s --retries=5 CMD extr
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 CMD ["tsx", "./backend/index.ts"]
 
-############################################
-# Mark as Nightly
-############################################
-FROM release AS nightly
-RUN npm run mark-as-nightly
