@@ -534,7 +534,11 @@ export class Stack {
             const image = svc.image as string | undefined;
 
             if (!image) {
-                results[serviceName] = { image: "(local build)", updateAvailable: false, error: "localBuild" };
+                results[serviceName] = {
+                    image: "(local build)",
+                    updateAvailable: false,
+                    error: "localBuild",
+                };
                 continue;
             }
 
@@ -548,7 +552,11 @@ export class Stack {
                     localDigest = (localRes.stdout?.toString().trim()) || "";
                 } catch (e) {
                     // Image might not be pulled yet
-                    results[serviceName] = { image, updateAvailable: false, error: "notPulled" };
+                    results[serviceName] = {
+                        image,
+                        updateAvailable: false,
+                        error: "notPulled",
+                    };
                     continue;
                 }
 
@@ -580,7 +588,11 @@ export class Stack {
                             remoteDigest = `sha256:${hash}`;
                         }
                     } catch (e2) {
-                        results[serviceName] = { image, updateAvailable: false, error: "registryError" };
+                        results[serviceName] = {
+                            image,
+                            updateAvailable: false,
+                            error: "registryError",
+                        };
                         continue;
                     }
                 }
@@ -591,12 +603,23 @@ export class Stack {
                 const localSha = localDigest.includes("@") ? localDigest.split("@")[1] : localDigest;
                 const hasUpdate = remoteDigest !== "" && localSha !== "" && localSha !== remoteDigest;
 
-                results[serviceName] = { image, updateAvailable: hasUpdate };
+                results[serviceName] = {
+                    image,
+                    updateAvailable: hasUpdate,
+                };
             } catch (e) {
                 if (e instanceof Error) {
-                    results[serviceName] = { image, updateAvailable: false, error: e.message };
+                    results[serviceName] = {
+                        image,
+                        updateAvailable: false,
+                        error: e.message,
+                    };
                 } else {
-                    results[serviceName] = { image, updateAvailable: false, error: "unknown error" };
+                    results[serviceName] = {
+                        image,
+                        updateAvailable: false,
+                        error: "unknown error",
+                    };
                 }
             }
         }
