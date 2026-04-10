@@ -45,7 +45,7 @@ Requirements:
      - ✅ ArchLinux
   - ❌ Debian/Raspbian Buster or lower is not supported
   - ❌ Windows (Will be supported later)
-- Arch: armv7, arm64, amd64 (a.k.a x86_64)
+- Arch: arm64, amd64 (a.k.a x86_64)
 
 ### Basic
 

@@ -41,7 +41,7 @@ jobs:
           node-version: 24
 
       - name: Install dependencies
-        run: npm clean-install --no-fund
+        run: npm ci --ignore-scripts --no-fund
 
       - name: Build frontend
         run: npm run build:frontend
@@ -49,7 +49,7 @@ jobs:
       - name: Build and push Docker image
         run: >
           docker buildx build
-          --platform linux/amd64,linux/arm64,linux/arm/v7
+          --platform linux/amd64,linux/arm64
           -t ghcr.io/rahbut/dockge:latest
           --target release
           -f ./docker/Dockerfile .
@@ -63,7 +63,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Platform | Compressed Size |" >> $GITHUB_STEP_SUMMARY
           echo "|----------|----------------|" >> $GITHUB_STEP_SUMMARY
-          for arch in amd64 arm64 "arm/v7"; do
+          for arch in amd64 arm64; do
             size=$(docker buildx imagetools inspect ghcr.io/rahbut/dockge:latest --raw \
               | jq -r --arg arch "$arch" '.manifests[] | select(.platform.architecture == ($arch | split("/")[0]) and (.platform.variant // "") == ($arch | split("/")[1] // "")) | .size' \
               | numfmt --to=iec-i --suffix=B 2>/dev/null || echo "N/A")
