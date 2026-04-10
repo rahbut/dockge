@@ -58,24 +58,24 @@
                     <div class="shadow-box big-padding">
                         <h4 class="mb-3">{{ $tc("dockgeAgent", 2) }} <span class="badge bg-warning" style="font-size: 12px;">beta</span></h4>
 
-                        <div v-for="(agent, endpoint) in $root.agentList" :key="endpoint" class="mb-3 agent">
+                        <div v-for="(agentItem, ep) in $root.agentList" :key="ep" class="mb-3 agent">
                             <!-- Agent Status -->
-                            <template v-if="$root.agentStatusList[endpoint]">
-                                <span v-if="$root.agentStatusList[endpoint] === 'online'" class="badge bg-primary me-2">{{ $t("agentOnline") }}</span>
-                                <span v-else-if="$root.agentStatusList[endpoint] === 'offline'" class="badge bg-danger me-2">{{ $t("agentOffline") }}</span>
-                                <span v-else class="badge bg-secondary me-2">{{ $t($root.agentStatusList[endpoint]) }}</span>
+                            <template v-if="$root.agentStatusList[ep]">
+                                <span v-if="$root.agentStatusList[ep] === 'online'" class="badge bg-primary me-2">{{ $t("agentOnline") }}</span>
+                                <span v-else-if="$root.agentStatusList[ep] === 'offline'" class="badge bg-danger me-2">{{ $t("agentOffline") }}</span>
+                                <span v-else class="badge bg-secondary me-2">{{ $t($root.agentStatusList[ep]) }}</span>
                             </template>
 
                             <!-- Agent Display Name -->
-                            <span v-if="endpoint === ''">{{ $t("currentEndpoint") }}</span>
-                            <a v-else :href="agent.url" target="_blank">{{ endpoint }}</a>
+                            <span v-if="ep === ''">{{ $t("currentEndpoint") }}</span>
+                            <a v-else :href="agentItem.url" target="_blank">{{ ep }}</a>
 
                             <!-- Remove Button -->
-                            <font-awesome-icon v-if="endpoint !== ''" class="ms-2 remove-agent" icon="trash" @click="showRemoveAgentDialog[agent.url] = !showRemoveAgentDialog[agent.url]" />
+                            <font-awesome-icon v-if="ep !== ''" class="ms-2 remove-agent" icon="trash" @click="showRemoveAgentDialog[agentItem.url] = !showRemoveAgentDialog[agentItem.url]" />
 
-                            <!-- Remoe Agent Dialog -->
-                            <BModal v-model="showRemoveAgentDialog[agent.url]" :okTitle="$t('removeAgent')" okVariant="danger" @ok="removeAgent(agent.url)">
-                                <p>{{ agent.url }}</p>
+                            <!-- Remove Agent Dialog -->
+                            <BModal v-model="showRemoveAgentDialog[agentItem.url]" :okTitle="$t('removeAgent')" okVariant="danger" @ok="removeAgent(agentItem.url)">
+                                <p>{{ agentItem.url }}</p>
                                 {{ $t("removeAgentMsg") }}
                             </BModal>
                         </div>

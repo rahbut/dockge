@@ -16,7 +16,6 @@
                 <div class="form-check">
                     <label><input v-model="settings.checkUpdate" type="checkbox" @change="saveSettings()" /> {{ $t("Show update if available") }}</label>
                 </div>
-
             </div>
         </div>
     </div>
