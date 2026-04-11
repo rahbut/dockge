@@ -799,7 +799,7 @@ export class Stack {
                 try {
                     let obj = JSON.parse(line);
                     let ports = (obj.Ports as string).split(/,\s*/).filter((s) => {
-                        return s.indexOf("->") >= 0 && !s.startsWith(":::") && !s.startsWith("[::]:"); 
+                        return s.indexOf("->") >= 0 && !s.startsWith(":::") && !s.startsWith("[::]:");
                     });
                     if (obj.Health === "") {
                         statusList.set(obj.Service, {
