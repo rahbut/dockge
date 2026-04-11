@@ -61,7 +61,7 @@ export default {
         background-color: #e7faec;
     }
     &.active {
-        background-color: #cdf8f4;
+        background: linear-gradient(135deg, #cdf8f4, #d4f5e0);
         color: #0d1f1e;
     }
     .title {

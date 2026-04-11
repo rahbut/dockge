@@ -179,12 +179,11 @@ h2 { font-size: 26px; }
         white-space: nowrap;
     }
     .badge.rounded-pill { border-radius: 50rem; }
-    .bg-primary { background-color: var(--color-primary); color: var(--color-dark-font2); }
+    .bg-primary { background: linear-gradient(135deg, var(--color-primary), var(--color-primary-end)); color: #0d1f1e; }
     .bg-secondary { background-color: #6c757d; color: white; }
     .bg-warning { background-color: var(--color-warning); color: white; }
     .bg-danger { background-color: var(--color-danger); color: white; }
     .bg-success { background-color: #198754; color: white; }
-    .dark .bg-primary { color: var(--color-dark-font2); background: linear-gradient(135deg, var(--color-primary), var(--color-primary-end)); }
 
     /* --- Forms --- */
     .form-control {
@@ -347,9 +346,9 @@ h2 { font-size: 26px; }
         padding: 0 8px;
     }
     .stack-list .item:hover { background-color: var(--color-highlight-white); }
-    .stack-list .item.active { background-color: #cdf8f4; color: #0d1f1e; }
+    .stack-list .item.active { background: linear-gradient(135deg, #cdf8f4, #d4f5e0); color: #0d1f1e; }
     .dark .stack-list .item:hover { background-color: var(--color-dark-bg2); }
-    .dark .stack-list .item.active { background-color: #1a3a38; color: #cdf8f4; }
+    .dark .stack-list .item.active { background: linear-gradient(135deg, #1a3a38, #1a3028); color: #cdf8f4; }
     .stack-list .item .title { display: inline-block; margin-top: -4px; }
 
     /* --- Editor box (CodeMirror wrapper) --- */
