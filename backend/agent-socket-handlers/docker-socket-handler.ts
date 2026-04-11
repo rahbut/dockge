@@ -3,6 +3,7 @@ import { DockgeServer } from "../dockge-server";
 import { callbackError, callbackResult, checkLogin, DockgeSocket, ValidationError } from "../util-server";
 import { Stack } from "../stack";
 import { AgentSocket } from "../../common/agent-socket";
+import childProcessAsync from "promisify-child-process";
 
 export class DockerSocketHandler extends AgentSocketHandler {
     create(socket : DockgeSocket, server : DockgeServer, agentSocket : AgentSocket) {
@@ -274,6 +275,58 @@ export class DockerSocketHandler extends AgentSocketHandler {
             }
         });
 
+        // pruneImages - remove unused Docker images and return space freed
+        agentSocket.on("pruneImages", async (aggressive : unknown, callback) => {
+            try {
+                checkLogin(socket);
+
+                if (typeof aggressive !== "boolean") {
+                    throw new ValidationError("aggressive must be a boolean");
+                }
+
+                const args = [ "image", "prune", "-f", "--format", "{{json .}}" ];
+                if (aggressive) {
+                    args.push("-a");
+                }
+
+                const res = await childProcessAsync.spawn("docker", args, { encoding: "utf8" });
+                const stdout = (res.stdout as string ?? "").trim();
+
+                let imagesDeleted : string[] = [];
+                let spaceReclaimed = "0 B";
+
+                if (stdout) {
+                    try {
+                        const parsed = JSON.parse(stdout);
+
+                        if (Array.isArray(parsed.ImagesDeleted)) {
+                            imagesDeleted = parsed.ImagesDeleted.map((entry : Record<string, string>) => {
+                                // Prefer human-readable tag over sha256 digest
+                                const name = entry.Untagged ?? entry.Deleted ?? "";
+                                // Truncate long digests for display
+                                return name.startsWith("sha256:") ? name.substring(0, 19) + "..." : name;
+                            }).filter(Boolean);
+                        }
+
+                        if (typeof parsed.SpaceReclaimed === "number") {
+                            spaceReclaimed = formatBytes(parsed.SpaceReclaimed);
+                        }
+                    } catch {
+                        // stdout was not valid JSON — treat as no output
+                    }
+                }
+
+                callbackResult({
+                    ok: true,
+                    count: imagesDeleted.length,
+                    spaceReclaimed,
+                    images: imagesDeleted,
+                }, callback);
+            } catch (e) {
+                callbackError(e, callback);
+            }
+        });
+
         // getExternalNetworkList
         agentSocket.on("getDockerNetworkList", async (callback) => {
             try {
@@ -309,5 +362,18 @@ export class DockerSocketHandler extends AgentSocketHandler {
         return stack;
     }
 
+}
+
+/**
+ * Format a byte count into a human-readable string (e.g. "1.23 GB")
+ */
+function formatBytes(bytes : number) : string {
+    if (bytes === 0) {
+        return "0 B";
+    }
+    const units = [ "B", "KB", "MB", "GB", "TB" ];
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    const value = bytes / Math.pow(1024, i);
+    return `${value.toFixed(2)} ${units[i]}`;
 }
 

@@ -24,21 +24,91 @@
                         </div>
                     </div>
 
-                    <!-- Check for Updates -->
-                    <div class="shadow-box big-padding text-center mb-4">
-                        <button class="btn btn-normal" :disabled="checkingUpdates" @click="checkAllUpdates">
-                            <RefreshCwIcon :size="14" class="mr-1 inline" :class="{ 'animate-spin': checkingUpdates }" />
-                            {{ checkingUpdates ? $t('checkingForUpdates') : $t('checkForUpdates') }}
-                        </button>
-                        <div v-if="updateCheckDone" class="mt-2">
-                            <span v-if="updatesAvailableNum > 0" class="text-yellow-500 flex items-center justify-center gap-1">
-                                <ArrowUpCircleIcon :size="14" />
-                                {{ $t('stacksHaveUpdates', [updatesAvailableNum, totalCheckedNum]) }}
-                            </span>
-                            <span v-else class="text-green-500 flex items-center justify-center gap-1">
-                                <CheckCircleIcon :size="14" />
-                                {{ $t('noUpdatesFound') }}
-                            </span>
+                    <!-- Maintenance actions -->
+                    <div class="shadow-box big-padding mb-4">
+                        <!-- Check for Updates -->
+                        <div class="text-center mb-4 pb-4 border-b border-gray-200 dark:border-[#1d2634]">
+                            <button class="btn btn-normal" :disabled="checkingUpdates" @click="checkAllUpdates">
+                                <RefreshCwIcon :size="14" class="mr-1 inline" :class="{ 'animate-spin': checkingUpdates }" />
+                                {{ checkingUpdates ? $t('checkingForUpdates') : $t('checkForUpdates') }}
+                            </button>
+                            <div v-if="updateCheckDone" class="mt-2">
+                                <span v-if="updatesAvailableNum > 0" class="text-yellow-500 flex items-center justify-center gap-1">
+                                    <ArrowUpCircleIcon :size="14" />
+                                    {{ $t('stacksHaveUpdates', [updatesAvailableNum, totalCheckedNum]) }}
+                                </span>
+                                <span v-else class="text-green-500 flex items-center justify-center gap-1">
+                                    <CheckCircleIcon :size="14" />
+                                    {{ $t('noUpdatesFound') }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Prune Images -->
+                        <div class="text-center">
+                            <div class="inline-flex btn-group">
+                                <button class="btn btn-normal" :disabled="pruning" @click="pruneImages(false)">
+                                    <Trash2Icon :size="14" class="mr-1 inline" :class="{ 'animate-spin': pruning }" />
+                                    {{ pruning ? $t('pruningImages') : $t('pruneImages') }}
+                                </button>
+                                <HMenu as="div" class="relative">
+                                    <HMenuButton class="btn btn-normal rounded-l-none px-3 self-stretch" :disabled="pruning">
+                                        <ChevronDownIcon :size="14" />
+                                    </HMenuButton>
+                                    <transition
+                                        enter-active-class="transition duration-100 ease-out"
+                                        enter-from-class="transform scale-95 opacity-0"
+                                        enter-to-class="transform scale-100 opacity-1"
+                                        leave-active-class="transition duration-75 ease-in"
+                                        leave-from-class="transform scale-100 opacity-1"
+                                        leave-to-class="transform scale-95 opacity-0"
+                                    >
+                                        <HMenuItems class="absolute right-0 mt-1 w-52 origin-top-right rounded-xl overflow-hidden shadow-xl bg-white dark:bg-[#0d1117] border border-gray-100 dark:border-[#1d2634] z-50 focus:outline-none">
+                                            <HMenuItem v-slot="{ active: itemActive }">
+                                                <button class="w-full text-left flex items-center gap-2 px-4 py-2 text-sm" :class="itemActive ? 'bg-gray-50 dark:bg-[#070a10]' : ''" @click="pruneImages(false)">
+                                                    <Trash2Icon :size="13" /> {{ $t('pruneStandard') }}
+                                                </button>
+                                            </HMenuItem>
+                                            <HMenuItem v-slot="{ active: itemActive }">
+                                                <button class="w-full text-left flex items-center gap-2 px-4 py-2 text-sm" :class="itemActive ? 'bg-gray-50 dark:bg-[#070a10]' : ''" @click="pruneImages(true)">
+                                                    <Trash2Icon :size="13" /> {{ $t('pruneAggressive') }}
+                                                </button>
+                                            </HMenuItem>
+                                        </HMenuItems>
+                                    </transition>
+                                </HMenu>
+                            </div>
+
+                            <!-- Busy indicator -->
+                            <div v-if="pruning" class="mt-2 text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center gap-2">
+                                <LoaderIcon :size="14" class="animate-spin" />
+                                {{ $t('pruningImages') }}
+                            </div>
+
+                            <!-- Result -->
+                            <div v-if="pruneResult !== null && !pruning" class="mt-2">
+                                <span v-if="pruneResult.count > 0" class="text-green-500 flex items-center justify-center gap-1">
+                                    <CheckCircleIcon :size="14" />
+                                    {{ $t('pruneSuccess', [pruneResult.count, pruneResult.spaceReclaimed]) }}
+                                </span>
+                                <span v-else class="text-gray-400 flex items-center justify-center gap-1">
+                                    <CheckCircleIcon :size="14" />
+                                    {{ $t('pruneNothingFound') }}
+                                </span>
+
+                                <!-- Collapsible image list -->
+                                <div v-if="pruneResult.count > 0" class="mt-2">
+                                    <button class="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 flex items-center gap-1 mx-auto" @click="pruneExpanded = !pruneExpanded">
+                                        <ChevronDownIcon :size="12" :class="pruneExpanded ? 'rotate-180' : ''" class="transition-transform" />
+                                        {{ pruneExpanded ? $t('pruneHideImages') : $t('pruneShowImages') }}
+                                    </button>
+                                    <div v-if="pruneExpanded" class="mt-2 text-left text-xs font-mono bg-gray-50 dark:bg-[#070a10] rounded-lg p-3 max-h-40 overflow-y-auto">
+                                        <div v-for="img in pruneResult.images" :key="img" class="text-gray-600 dark:text-gray-400 py-0.5">
+                                            {{ img }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -121,8 +191,8 @@
 
 <script>
 import { statusNameShort } from "../../../common/util-common";
-import { Dialog as HDialog, DialogPanel as HDialogPanel, TransitionRoot, TransitionChild } from "@headlessui/vue";
-import { RefreshCwIcon, ArrowUpCircleIcon, CheckCircleIcon, Trash2Icon } from "lucide-vue-next";
+import { Dialog as HDialog, DialogPanel as HDialogPanel, TransitionRoot, TransitionChild, Menu as HMenu, MenuButton as HMenuButton, MenuItems as HMenuItems, MenuItem as HMenuItem } from "@headlessui/vue";
+import { RefreshCwIcon, ArrowUpCircleIcon, CheckCircleIcon, Trash2Icon, ChevronDownIcon, LoaderIcon } from "lucide-vue-next";
 
 export default {
     components: {
@@ -130,10 +200,16 @@ export default {
         HDialogPanel,
         TransitionRoot,
         TransitionChild,
+        HMenu,
+        HMenuButton,
+        HMenuItems,
+        HMenuItem,
         RefreshCwIcon,
         ArrowUpCircleIcon,
         CheckCircleIcon,
         Trash2Icon,
+        ChevronDownIcon,
+        LoaderIcon,
     },
     props: {
         calculatedHeight: {
@@ -156,6 +232,9 @@ export default {
             updateCheckDone: false,
             updatesAvailableNum: 0,
             totalCheckedNum: 0,
+            pruning: false,
+            pruneResult: null,
+            pruneExpanded: false,
         };
     },
 
@@ -230,6 +309,25 @@ export default {
                     const stackNames = Object.keys(results);
                     this.totalCheckedNum = stackNames.length;
                     this.updatesAvailableNum = stackNames.filter(name => results[name].updateAvailable === true).length;
+                } else {
+                    this.$root.toastRes(res);
+                }
+            });
+        },
+
+        pruneImages(aggressive) {
+            this.pruning = true;
+            this.pruneResult = null;
+            this.pruneExpanded = false;
+
+            this.$root.emitAgent("", "pruneImages", aggressive, (res) => {
+                this.pruning = false;
+                if (res.ok) {
+                    this.pruneResult = {
+                        count: res.count,
+                        spaceReclaimed: res.spaceReclaimed,
+                        images: res.images,
+                    };
                 } else {
                     this.$root.toastRes(res);
                 }

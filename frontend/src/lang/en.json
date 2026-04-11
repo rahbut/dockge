@@ -142,5 +142,13 @@
     "Theme": "Theme",
     "Light": "Light",
     "Dark": "Dark",
-    "Auto": "Auto"
+    "Auto": "Auto",
+    "pruneImages": "Prune Images",
+    "pruningImages": "Pruning images...",
+    "pruneStandard": "Standard (dangling only)",
+    "pruneAggressive": "Aggressive (all unused)",
+    "pruneSuccess": "{0} images pruned · {1} freed",
+    "pruneNothingFound": "No unused images found",
+    "pruneShowImages": "Show removed images",
+    "pruneHideImages": "Hide removed images"
 }
