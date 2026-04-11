@@ -284,7 +284,7 @@ export class DockerSocketHandler extends AgentSocketHandler {
                     throw new ValidationError("aggressive must be a boolean");
                 }
 
-                const args = [ "image", "prune", "-f", "--format", "{{json .}}" ];
+                const args = [ "image", "prune", "-f" ];
                 if (aggressive) {
                     args.push("-a");
                 }
@@ -296,23 +296,19 @@ export class DockerSocketHandler extends AgentSocketHandler {
                 let spaceReclaimed = "0 B";
 
                 if (stdout) {
-                    try {
-                        const parsed = JSON.parse(stdout);
+                    for (const line of stdout.split("\n")) {
+                        const trimmed = line.trim();
 
-                        if (Array.isArray(parsed.ImagesDeleted)) {
-                            imagesDeleted = parsed.ImagesDeleted.map((entry : Record<string, string>) => {
-                                // Prefer human-readable tag over sha256 digest
-                                const name = entry.Untagged ?? entry.Deleted ?? "";
-                                // Truncate long digests for display
-                                return name.startsWith("sha256:") ? name.substring(0, 19) + "..." : name;
-                            }).filter(Boolean);
+                        // Untagged lines show human-readable names — prefer these
+                        if (trimmed.toLowerCase().startsWith("untagged:")) {
+                            imagesDeleted.push(trimmed.substring("untagged:".length).trim());
                         }
 
-                        if (typeof parsed.SpaceReclaimed === "number") {
-                            spaceReclaimed = formatBytes(parsed.SpaceReclaimed);
+                        // Space reclaimed summary line
+                        const spaceMatch = trimmed.match(/total reclaimed space:\s*(.+)/i);
+                        if (spaceMatch) {
+                            spaceReclaimed = spaceMatch[1].trim();
                         }
-                    } catch {
-                        // stdout was not valid JSON — treat as no output
                     }
                 }
 

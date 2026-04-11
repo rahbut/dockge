@@ -52,7 +52,7 @@
                                     {{ pruning ? $t('pruningImages') : $t('pruneImages') }}
                                 </button>
                                 <HMenu as="div" class="relative">
-                                    <HMenuButton class="btn btn-normal rounded-l-none px-3 self-stretch" :disabled="pruning">
+                                    <HMenuButton class="btn btn-normal rounded-l-none px-3 self-stretch flex items-center" :disabled="pruning">
                                         <ChevronDownIcon :size="14" />
                                     </HMenuButton>
                                     <transition
