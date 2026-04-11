@@ -128,13 +128,15 @@ export default {
             cursorBlink = false;
         }
 
+        const currentTheme = this.$root.isDark ? this.darkTermTheme : this.lightTermTheme;
+
         this.terminal = new Terminal({
             fontSize: 14,
             fontFamily: "'JetBrains Mono', monospace",
             cursorBlink,
             cols: this.cols,
             rows: this.rows,
-            theme: this.$root.isDark ? this.darkTermTheme : this.lightTermTheme,
+            theme: currentTheme,
         });
 
         if (this.mode === "mainTerminal") {
@@ -147,6 +149,10 @@ export default {
 
         // Bind to a div
         this.terminal.open(this.$refs.terminal);
+
+        // Re-apply theme after open to ensure canvas renders correctly
+        this.terminal.options.theme = currentTheme;
+
         this.terminal.focus();
 
         // Add right-click context menu handler for paste
@@ -185,9 +191,21 @@ export default {
         }
         // Fit the terminal width to the div container size after terminal is created.
         this.updateTerminalSize();
+
+        // Re-apply theme when terminal container becomes visible (e.g. after v-show toggle)
+        this.visibilityObserver = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting && this.terminal) {
+                this.terminal.options.theme = this.$root.isDark ? this.darkTermTheme : this.lightTermTheme;
+                if (this.terminalFitAddOn) {
+                    this.terminalFitAddOn.fit();
+                }
+            }
+        });
+        this.visibilityObserver.observe(this.$refs.terminal);
     },
 
     unmounted() {
+        this.visibilityObserver?.disconnect();
         window.removeEventListener("resize", this.onResizeEvent); // Remove the resize event listener from the window object.
         this.$root.unbindTerminal(this.name);
         this.terminal.dispose();
@@ -434,11 +452,13 @@ export default {
     background-color: #000000 !important;
 }
 
-/* Override xterm.css default black viewport background for light mode */
-.xterm:not(.allow-transparency) .xterm-viewport {
-    background-color: #f6f8fa;
+/* Override xterm.css default black viewport/screen background */
+.xterm .xterm-viewport,
+.xterm .xterm-screen {
+    background-color: #f6f8fa !important;
 }
-.dark .xterm:not(.allow-transparency) .xterm-viewport {
-    background-color: #000000;
+.dark .xterm .xterm-viewport,
+.dark .xterm .xterm-screen {
+    background-color: #000000 !important;
 }
 </style>
