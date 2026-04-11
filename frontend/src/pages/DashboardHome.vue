@@ -51,7 +51,7 @@
                                     <Trash2Icon :size="14" class="mr-1 inline" :class="{ 'animate-spin': pruning }" />
                                     {{ pruning ? $t('pruningImages') : $t('pruneImages') }}
                                 </button>
-                                <HMenu as="div" class="relative">
+                                <HMenu as="div" class="relative flex items-stretch">
                                     <HMenuButton class="btn btn-normal rounded-l-none px-3 self-stretch flex items-center" :disabled="pruning">
                                         <ChevronDownIcon :size="14" />
                                     </HMenuButton>

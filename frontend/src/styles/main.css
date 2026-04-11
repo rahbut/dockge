@@ -87,6 +87,12 @@ h2 { font-size: 26px; }
         transition: background-color 0.15s, border-color 0.15s, color 0.15s;
         border: 1px solid transparent;
     }
+    .btn:disabled,
+    .btn.disabled {
+        opacity: 0.55;
+        pointer-events: none;
+        cursor: default;
+    }
 
     .btn-primary {
         color: #1a2e1a;
