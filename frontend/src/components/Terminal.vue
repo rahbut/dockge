@@ -440,12 +440,11 @@ export default {
 </script>
 
 <style scoped>
-.main-terminal { height: 100%; }
+.main-terminal { overflow: hidden; }
 </style>
 
 <style>
 .terminal {
-    height: 100%;
     background-color: #f6f8fa;
 }
 .dark .terminal {
