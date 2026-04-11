@@ -1,10 +1,10 @@
 name: Deploy
 
 on:
-  push:
+  workflow_run:
+    workflows: ["Node.js CI - Dockge"]
     branches: [main]
-    paths-ignore:
-      - '*.md'
+    types: [completed]
   workflow_dispatch:  # Allow manual trigger
 
 permissions: {}
@@ -12,6 +12,7 @@ permissions: {}
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     timeout-minutes: 120
     permissions:
       contents: read
