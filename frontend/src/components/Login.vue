@@ -1,8 +1,8 @@
 <template>
-    <div class="form-container">
-        <div class="form">
+    <div class="flex items-center pt-10 pb-10">
+        <div class="w-full max-w-[330px] p-4 mx-auto text-center">
             <form @submit.prevent="submit">
-                <h1 class="h3 mb-3 fw-normal" />
+                <h1 class="text-xl mb-3 font-normal" />
 
                 <div v-if="!tokenRequired" class="form-floating">
                     <input id="floatingInput" v-model="username" type="text" class="form-control" placeholder="Username" autocomplete="username" required>
@@ -14,23 +14,21 @@
                     <label for="floatingPassword">{{ $t("Password") }}</label>
                 </div>
 
-                <div v-if="tokenRequired">
-                    <div class="form-floating mt-3">
-                        <input id="otp" v-model="token" type="text" maxlength="6" class="form-control" placeholder="123456" autocomplete="one-time-code" required>
-                        <label for="otp">{{ $t("Token") }}</label>
-                    </div>
+                <div v-if="tokenRequired" class="form-floating mt-3">
+                    <input id="otp" v-model="token" type="text" maxlength="6" class="form-control" placeholder="123456" autocomplete="one-time-code" required>
+                    <label for="otp">{{ $t("Token") }}</label>
                 </div>
 
-                <div class="form-check mb-3 mt-3 d-flex justify-content-center pe-4">
+                <div class="flex justify-center mt-3 mb-3">
                     <div class="form-check">
                         <input id="remember" v-model="$root.remember" type="checkbox" value="remember-me" class="form-check-input">
-
                         <label class="form-check-label" for="remember">
                             {{ $t("Remember me") }}
                         </label>
                     </div>
                 </div>
-                <button class="w-100 btn btn-primary" type="submit" :disabled="processing">
+
+                <button class="w-full btn btn-primary" type="submit" :disabled="processing">
                     {{ $t("Login") }}
                 </button>
 
@@ -64,10 +62,6 @@ export default {
     },
 
     methods: {
-        /**
-         * Submit the user details and attempt to log in
-         * @returns {void}
-         */
         submit() {
             this.processing = true;
 
@@ -81,34 +75,6 @@ export default {
                 }
             });
         },
-
     },
 };
 </script>
-
-<style lang="scss" scoped>
-.form-container {
-    display: flex;
-    align-items: center;
-    padding-top: 40px;
-    padding-bottom: 40px;
-}
-
-.form-floating {
-    > label {
-        padding-left: 1.3rem;
-    }
-
-    > .form-control {
-        padding-left: 1.3rem;
-    }
-}
-
-.form {
-    width: 100%;
-    max-width: 330px;
-    padding: 15px;
-    margin: auto;
-    text-align: center;
-}
-</style>

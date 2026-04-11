@@ -5,10 +5,10 @@
                 <div class="placeholder"></div>
                 <div class="search-wrapper">
                     <a v-if="searchText == ''" class="search-icon">
-                        <font-awesome-icon icon="search" />
+                        <SearchIcon :size="16" />
                     </a>
-                    <a v-if="searchText != ''" class="search-icon" style="cursor: pointer" @click="clearSearchText">
-                        <font-awesome-icon icon="times" />
+                    <a v-if="searchText != ''" class="search-icon cursor-pointer" @click="clearSearchText">
+                        <XIcon :size="16" />
                     </a>
                     <form>
                         <input v-model="searchText" class="form-control search-input" autocomplete="off" />
@@ -32,11 +32,14 @@
 
 <script>
 import StackListItem from "../components/StackListItem.vue";
+import { SearchIcon, XIcon } from "lucide-vue-next";
 import { CREATED_FILE, CREATED_STACK, EXITED, RUNNING, UNKNOWN } from "../../../common/util-common";
 
 export default {
     components: {
         StackListItem,
+        SearchIcon,
+        XIcon,
     },
     props: {
         /** Should the scrollbar be shown */
@@ -162,8 +165,7 @@ export default {
 };
 </script>
 
-<style lang="scss" scoped>
-@import "../styles/vars.scss";
+<style scoped>
 
 .shadow-box {
     height: calc(100vh - 150px);
@@ -178,11 +180,8 @@ export default {
     margin-bottom: 10px;
     padding: 10px;
 
-    .dark & {
-        background-color: $dark-header-bg;
-        border-bottom: 0;
-    }
 }
+.dark .list-header { background-color: #161b22; border-bottom: 0; }
 
 .header-top {
     display: flex;

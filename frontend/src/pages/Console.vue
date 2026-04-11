@@ -7,7 +7,7 @@
 
             <!-- eslint-disable vue/no-v-html -->
             <div v-else class="alert alert-warning shadow-box" role="alert">
-                <h4 class="alert-heading">{{ $t("Console is not enabled") }}</h4>
+                <h4 class="alert-heading font-semibold mb-2">{{ $t("Console is not enabled") }}</h4>
                 <p v-html="$t('ConsoleNotEnabledMSG1')"></p>
                 <p v-html="$t('ConsoleNotEnabledMSG2')"></p>
                 <p v-html="$t('ConsoleNotEnabledMSG3')"></p>
@@ -44,8 +44,6 @@ export default {
 };
 </script>
 
-<style scoped lang="scss">
-.terminal {
-    height: 410px;
-}
+<style scoped>
+.terminal { height: 410px; }
 </style>

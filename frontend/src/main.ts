@@ -4,11 +4,9 @@ import "../../common/util-common";
 import { createApp, defineComponent, h } from "vue";
 import App from "./App.vue";
 import { router } from "./router";
-import { FontAwesomeIcon } from "./icon.js";
 import { i18n } from "./i18n";
 
 // Dependencies
-import "bootstrap";
 import Toast, { POSITION, useToast } from "vue-toastification";
 import "@xterm/xterm/lib/xterm.js";
 
@@ -16,7 +14,7 @@ import "@xterm/xterm/lib/xterm.js";
 import "@fontsource/jetbrains-mono";
 import "vue-toastification/dist/index.css";
 import "@xterm/xterm/css/xterm.css";
-import "./styles/main.scss";
+import "./styles/main.css";
 
 // Minxins
 import socket from "./mixins/socket";
@@ -34,7 +32,6 @@ app.use(Toast, {
 });
 app.use(router);
 app.use(i18n);
-app.component("FontAwesomeIcon", FontAwesomeIcon);
 app.mount("#app");
 
 /**

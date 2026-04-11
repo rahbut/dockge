@@ -5,8 +5,8 @@
         </h1>
 
         <div class="shadow-box shadow-box-settings">
-            <div class="row">
-                <div v-if="showSubMenu" class="settings-menu col-lg-3 col-md-5">
+            <div class="flex flex-wrap">
+                <div v-if="showSubMenu" class="settings-menu w-full lg:w-1/4 md:w-5/12">
                     <router-link
                         v-for="(item, key) in subMenus"
                         :key="key"
@@ -17,15 +17,13 @@
                         </div>
                     </router-link>
 
-                    <!-- Logout Button -->
-                    <a v-if="$root.isMobile && $root.loggedIn && $root.socket.token !== 'autoLogin'" class="logout" @click.prevent="$root.logout">
-                        <div class="menu-item">
-                            <font-awesome-icon icon="sign-out-alt" />
-                            {{ $t("Logout") }}
+                    <a v-if="$root.isMobile && $root.loggedIn && $root.socket?.token !== 'autoLogin'" class="logout cursor-pointer" @click.prevent="$root.logout">
+                        <div class="menu-item flex items-center gap-2">
+                            <LogOutIcon :size="14" /> {{ $t("Logout") }}
                         </div>
                     </a>
                 </div>
-                <div class="settings-content col-lg-9 col-md-7">
+                <div class="settings-content flex-1 min-w-0 lg:w-3/4 md:w-7/12">
                     <div v-if="currentPage" class="settings-content-header">
                         {{ subMenus[currentPage].title }}
                     </div>
@@ -44,8 +42,10 @@
 
 <script>
 import { useRoute } from "vue-router";
+import { LogOutIcon } from "lucide-vue-next";
 
 export default {
+    components: { LogOutIcon },
     data() {
         return {
             show: true,
@@ -149,8 +149,7 @@ export default {
 };
 </script>
 
-<style lang="scss" scoped>
-@import "../styles/vars.scss";
+<style scoped>
 
 .shadow-box-settings {
     padding: 20px;
@@ -179,52 +178,29 @@ footer {
         transition: all ease-in-out 0.1s;
     }
 
-    .menu-item:hover {
-        background: $highlight-white;
-
-        .dark & {
-            background: $dark-header-bg;
-        }
-    }
-
+    .menu-item:hover { background: #e7faec; }
+    .dark .menu-item:hover { background: #161b22; }
     .active .menu-item {
-        background: $highlight-white;
-        border-left: 4px solid $primary;
+        background: #e7faec;
+        border-left: 4px solid #74c2ff;
         border-top-left-radius: 0;
         border-bottom-left-radius: 0;
-
-        .dark & {
-            background: $dark-header-bg;
-        }
     }
+    .dark .active .menu-item { background: #161b22; }
 }
 
-.settings-content {
-    .settings-content-header {
-        width: calc(100% + 20px);
-        border-bottom: 1px solid #dee2e6;
-        border-radius: 0 10px 0 0;
-        margin-top: -20px;
-        margin-right: -20px;
-        padding: 12.5px 1em;
-        font-size: 26px;
-
-        .dark & {
-            background: $dark-header-bg;
-            border-bottom: 0;
-        }
-
-        .mobile & {
-            padding: 15px 0 0 0;
-
-            .dark & {
-                background-color: transparent;
-            }
-        }
-    }
+.settings-content-header {
+    width: calc(100% + 20px);
+    border-bottom: 1px solid #dee2e6;
+    border-radius: 0 10px 0 0;
+    margin-top: -20px;
+    margin-right: -20px;
+    padding: 12.5px 1em;
+    font-size: 26px;
 }
+.dark .settings-content-header { background: #161b22; border-bottom: 0; }
+.mobile .settings-content-header { padding: 15px 0 0 0; }
+.dark .mobile .settings-content-header { background-color: transparent; }
 
-.logout {
-    color: $danger !important;
-}
+.logout { color: #dc3545 !important; }
 </style>

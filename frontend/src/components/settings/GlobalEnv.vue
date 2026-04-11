@@ -86,13 +86,7 @@ export default {
 };
 </script>
 
-<style scoped lang="scss">
-.editor-box {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 14px;
-
-    &.edit-mode {
-        background-color: #2c2f38 !important;
-    }
-}
+<style scoped>
+.editor-box { font-family: 'JetBrains Mono', monospace; font-size: 14px; }
+.editor-box.edit-mode { background-color: #2c2f38 !important; }
 </style>

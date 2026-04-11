@@ -377,13 +377,11 @@ export default {
 };
 </script>
 
-<style scoped lang="scss">
-.main-terminal {
-    height: 100%;
-}
+<style scoped>
+.main-terminal { height: 100%; }
 </style>
 
-<style lang="scss">
+<style>
 .terminal {
     background-color: black !important;
     height: 100%;

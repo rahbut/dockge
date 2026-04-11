@@ -8,7 +8,7 @@
                         <option v-for="option in options" :key="option" :value="option">{{ option }}</option>
                     </select>
 
-                    <font-awesome-icon icon="times" class="action remove ms-2 me-3 text-danger" @click="remove(index)" />
+                    <XIcon :size="14" class="action remove ml-2 mr-3 text-red-500" @click="remove(index)" />
                 </li>
             </ul>
 
@@ -21,7 +21,10 @@
 </template>
 
 <script>
+import { XIcon } from "lucide-vue-next";
+
 export default {
+    components: { XIcon },
     props: {
         name: {
             type: String,
@@ -101,28 +104,7 @@ export default {
 };
 </script>
 
-<style lang="scss" scoped>
-@import "../styles/vars.scss";
-
-.list-group {
-    background-color: $dark-bg2;
-
-    li {
-        display: flex;
-        align-items: center;
-        padding: 10px 0 10px 10px;
-
-        .domain-input {
-            flex-grow: 1;
-            background-color: $dark-bg2;
-            border: none;
-            color: $dark-font-color;
-            outline: none;
-
-            &::placeholder {
-                color: #1d2634;
-            }
-        }
-    }
-}
+<style scoped>
+.list-group { background-color: #070a10; }
+.list-group li { display: flex; align-items: center; padding: 10px 0 10px 10px; }
 </style>

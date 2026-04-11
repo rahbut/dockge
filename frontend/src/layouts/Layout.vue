@@ -1,7 +1,7 @@
 <template>
     <div :class="classes">
         <div v-if="! $root.socketIO.connected && ! $root.socketIO.firstConnect" class="lost-connection">
-            <div class="container-fluid">
+            <div class="px-4">
                 {{ $root.socketIO.connectionErrorMsg }}
                 <div v-if="$root.socketIO.showReverseProxyGuide">
                     {{ $t("reverseProxyMsg1") }} <a href="https://github.com/louislam/uptime-kuma/wiki/Reverse-Proxy" target="_blank">{{ $t("reverseProxyMsg2") }}</a>
@@ -10,66 +10,82 @@
         </div>
 
         <!-- Desktop header -->
-        <header v-if="! $root.isMobile" class="d-flex flex-wrap justify-content-center py-3 mb-3 border-bottom">
-            <router-link to="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-dark text-decoration-none">
-                <object class="bi me-2 ms-4" width="40" height="40" data="/icon.svg" />
-                <span class="fs-4 title">Dockge</span>
+        <header v-if="! $root.isMobile" class="flex flex-wrap items-center justify-center py-3 mb-3 border-b border-gray-200 dark:border-[#1d2634] dark:bg-[#161b22]">
+            <router-link to="/" class="flex items-center mb-3 md:mb-0 md:mr-auto text-dark no-underline ms-4">
+                <object class="me-2 ms-4" width="40" height="40" data="/icon.svg" />
+                <span class="text-2xl font-bold text-gray-900 dark:text-[#f0f6fc]">Dockge</span>
             </router-link>
 
-            <ul class="nav nav-pills">
+            <ul class="nav nav-pills me-6">
                 <li v-if="$root.loggedIn" class="nav-item me-2">
                     <router-link to="/" class="nav-link">
-                        <font-awesome-icon icon="home" /> {{ $t("home") }}
+                        <HomeIcon :size="16" /> {{ $t("home") }}
                     </router-link>
                 </li>
 
                 <li v-if="$root.loggedIn" class="nav-item me-2">
                     <router-link to="/console" class="nav-link">
-                        <font-awesome-icon icon="terminal" /> {{ $t("console") }}
+                        <TerminalIcon :size="16" /> {{ $t("console") }}
                     </router-link>
                 </li>
 
                 <li v-if="$root.loggedIn" class="nav-item">
-                    <div class="dropdown dropdown-profile-pic">
-                        <div class="nav-link" data-bs-toggle="dropdown">
-                            <div class="profile-pic">{{ $root.usernameFirstChar }}</div>
-                            <font-awesome-icon icon="angle-down" />
-                        </div>
+                    <Menu as="div" class="relative">
+                        <MenuButton class="nav-link cursor-pointer flex gap-2 items-center rounded-md bg-black/10 dark:bg-white/10 px-3 py-2">
+                            <div class="profile-pic flex items-center justify-center text-white font-bold text-xs rounded-full w-6 h-6" style="background: linear-gradient(135deg, var(--color-primary), var(--color-primary-end))">
+                                {{ $root.usernameFirstChar }}
+                            </div>
+                            <ChevronDownIcon :size="14" />
+                        </MenuButton>
 
-                        <!-- Header's Dropdown Menu -->
-                        <ul class="dropdown-menu">
-                            <!-- Username -->
-                            <li>
-                                <i18n-t v-if="$root.username != null" tag="span" keypath="signedInDisp" class="dropdown-item-text">
-                                    <strong>{{ $root.username }}</strong>
-                                </i18n-t>
-                                <span v-if="$root.username == null" class="dropdown-item-text">{{ $t("signedInDispDisabled") }}</span>
-                            </li>
+                        <transition
+                            enter-active-class="transition duration-100 ease-out"
+                            enter-from-class="transform scale-95 opacity-0"
+                            enter-to-class="transform scale-100 opacity-1"
+                            leave-active-class="transition duration-75 ease-in"
+                            leave-from-class="transform scale-100 opacity-1"
+                            leave-to-class="transform scale-95 opacity-0"
+                        >
+                            <MenuItems class="absolute right-0 mt-2 w-48 origin-top-right rounded-2xl overflow-hidden shadow-xl bg-white dark:bg-[#0d1117] border border-gray-100 dark:border-[#1d2634] focus:outline-none z-50">
+                                <div class="px-4 py-3 text-sm border-b border-gray-100 dark:border-[#1d2634]">
+                                    <i18n-t v-if="$root.username != null" tag="span" keypath="signedInDisp">
+                                        <strong>{{ $root.username }}</strong>
+                                    </i18n-t>
+                                    <span v-if="$root.username == null">{{ $t("signedInDispDisabled") }}</span>
+                                </div>
 
-                            <li><hr class="dropdown-divider"></li>
+                                <MenuItem v-slot="{ active }">
+                                    <button
+                                        class="w-full text-left flex items-center gap-2 px-4 py-3 text-sm"
+                                        :class="active ? 'bg-gray-50 dark:bg-[#070a10]' : ''"
+                                        @click="scanFolder"
+                                    >
+                                        <RefreshCwIcon :size="14" /> {{ $t("scanFolder") }}
+                                    </button>
+                                </MenuItem>
 
-                            <!-- Functions -->
+                                <MenuItem v-slot="{ active }">
+                                    <router-link
+                                        to="/settings/general"
+                                        class="flex items-center gap-2 px-4 py-3 text-sm"
+                                        :class="active ? 'bg-gray-50 dark:bg-[#070a10]' : ''"
+                                    >
+                                        <SettingsIcon :size="14" /> {{ $t("Settings") }}
+                                    </router-link>
+                                </MenuItem>
 
-                            <li>
-                                <button class="dropdown-item" @click="scanFolder">
-                                    <font-awesome-icon icon="arrows-rotate" /> {{ $t("scanFolder") }}
-                                </button>
-                            </li>
-
-                            <li>
-                                <router-link to="/settings/general" class="dropdown-item" :class="{ active: $route.path.includes('settings') }">
-                                    <font-awesome-icon icon="cog" /> {{ $t("Settings") }}
-                                </router-link>
-                            </li>
-
-                            <li>
-                                <button class="dropdown-item" @click="$root.logout">
-                                    <font-awesome-icon icon="sign-out-alt" />
-                                    {{ $t("Logout") }}
-                                </button>
-                            </li>
-                        </ul>
-                    </div>
+                                <MenuItem v-slot="{ active }">
+                                    <button
+                                        class="w-full text-left flex items-center gap-2 px-4 py-3 text-sm border-t border-gray-100 dark:border-[#1d2634]"
+                                        :class="active ? 'bg-gray-50 dark:bg-[#070a10]' : ''"
+                                        @click="$root.logout"
+                                    >
+                                        <LogOutIcon :size="14" /> {{ $t("Logout") }}
+                                    </button>
+                                </MenuItem>
+                            </MenuItems>
+                        </transition>
+                    </Menu>
                 </li>
             </ul>
         </header>
@@ -87,42 +103,32 @@
 
 <script>
 import Login from "../components/Login.vue";
+import { Menu, MenuButton, MenuItems, MenuItem } from "@headlessui/vue";
+import { HomeIcon, TerminalIcon, ChevronDownIcon, RefreshCwIcon, SettingsIcon, LogOutIcon } from "lucide-vue-next";
 import { ALL_ENDPOINTS } from "../../../common/util-common";
 
 export default {
-
     components: {
         Login,
-    },
-
-    data() {
-        return {
-
-        };
+        Menu,
+        MenuButton,
+        MenuItems,
+        MenuItem,
+        HomeIcon,
+        TerminalIcon,
+        ChevronDownIcon,
+        RefreshCwIcon,
+        SettingsIcon,
+        LogOutIcon,
     },
 
     computed: {
-
-        // Theme or Mobile
         classes() {
             const classes = {};
             classes[this.$root.theme] = true;
             classes["mobile"] = this.$root.isMobile;
             return classes;
         },
-
-    },
-
-    watch: {
-
-    },
-
-    mounted() {
-
-    },
-
-    beforeUnmount() {
-
     },
 
     methods: {
@@ -132,162 +138,11 @@ export default {
             });
         },
     },
-
 };
 </script>
 
-<style lang="scss" scoped>
-@import "../styles/vars.scss";
-
-.nav-link {
-    &.status-page {
-        background-color: rgba(255, 255, 255, 0.1);
-    }
-}
-
-.bottom-nav {
-    z-index: 1000;
-    position: fixed;
-    bottom: 0;
-    height: calc(60px + env(safe-area-inset-bottom));
-    width: 100%;
-    left: 0;
-    background-color: #fff;
-    box-shadow: 0 15px 47px 0 rgba(0, 0, 0, 0.05), 0 5px 14px 0 rgba(0, 0, 0, 0.05);
-    text-align: center;
-    white-space: nowrap;
-    padding: 0 10px env(safe-area-inset-bottom);
-
-    a {
-        text-align: center;
-        width: 25%;
-        display: inline-block;
-        height: 100%;
-        padding: 8px 10px 0;
-        font-size: 13px;
-        color: #c1c1c1;
-        overflow: hidden;
-        text-decoration: none;
-
-        &.router-link-exact-active, &.active {
-            color: $primary;
-            font-weight: bold;
-        }
-
-        div {
-            font-size: 20px;
-        }
-    }
-}
-
+<style scoped>
 main {
     min-height: calc(100vh - 160px);
-}
-
-.title {
-    font-weight: bold;
-}
-
-.nav {
-    margin-right: 25px;
-}
-
-.lost-connection {
-    padding: 5px;
-    background-color: crimson;
-    color: white;
-    position: fixed;
-    width: 100%;
-    z-index: 99999;
-}
-
-// Profile Pic Button with Dropdown
-.dropdown-profile-pic {
-    user-select: none;
-
-    .nav-link {
-        cursor: pointer;
-        display: flex;
-        gap: 6px;
-        align-items: center;
-        background-color: rgba(200, 200, 200, 0.2);
-        padding: 0.5rem 0.8rem;
-
-        &:hover {
-            background-color: rgba(255, 255, 255, 0.2);
-        }
-    }
-
-    .dropdown-menu {
-        transition: all 0.2s;
-        padding-left: 0;
-        padding-bottom: 0;
-        margin-top: 8px !important;
-        border-radius: 16px;
-        overflow: hidden;
-
-        .dropdown-divider {
-            margin: 0;
-            border-top: 1px solid rgba(0, 0, 0, 0.4);
-            background-color: transparent;
-        }
-
-        .dropdown-item-text {
-            font-size: 14px;
-            padding-bottom: 0.7rem;
-        }
-
-        .dropdown-item {
-            padding: 0.7rem 1rem;
-        }
-
-        .dark & {
-            background-color: $dark-bg;
-            color: $dark-font-color;
-            border-color: $dark-border-color;
-
-            .dropdown-item {
-                color: $dark-font-color;
-
-                &.active {
-                    color: $dark-font-color2;
-                    background-color: $highlight !important;
-                }
-
-                &:hover {
-                    background-color: $dark-bg2;
-                }
-            }
-        }
-    }
-
-    .profile-pic {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        background-color: $primary;
-        width: 24px;
-        height: 24px;
-        margin-right: 5px;
-        border-radius: 50rem;
-        font-weight: bold;
-        font-size: 10px;
-    }
-}
-
-.dark {
-    header {
-        background-color: $dark-header-bg;
-        border-bottom-color: $dark-header-bg !important;
-
-        span {
-            color: #f0f6fc;
-        }
-    }
-
-    .bottom-nav {
-        background-color: $dark-bg;
-    }
 }
 </style>

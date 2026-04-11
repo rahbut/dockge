@@ -178,11 +178,9 @@ export default {
 };
 </script>
 
-<style lang="scss" scoped>
-@import "../styles/vars.scss";
-
+<style scoped>
 .list-group {
-    background-color: $dark-bg2;
+    background-color: #070a10;
 
     li {
         display: flex;

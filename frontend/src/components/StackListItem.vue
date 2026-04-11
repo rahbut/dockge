@@ -3,7 +3,7 @@
         <Uptime :stack="stack" :fixed-width="true" class="me-2" />
         <div class="title">
             <span>{{ stackName }}</span>
-            <font-awesome-icon v-if="stack.updateAvailable === true" icon="arrow-alt-circle-up" class="update-badge ms-1" :title="$t('updateAvailable')" />
+            <ArrowUpCircleIcon v-if="stack.updateAvailable === true" :size="12" class="update-badge ml-1 inline" :title="$t('updateAvailable')" />
             <div v-if="$root.agentCount > 1" class="endpoint">{{ endpointDisplay }}</div>
         </div>
     </router-link>
@@ -11,10 +11,12 @@
 
 <script>
 import Uptime from "./Uptime.vue";
+import { ArrowUpCircleIcon } from "lucide-vue-next";
 
 export default {
     components: {
-        Uptime
+        Uptime,
+        ArrowUpCircleIcon,
     },
     props: {
         /** Stack this represents */
@@ -41,8 +43,7 @@ export default {
 };
 </script>
 
-<style lang="scss" scoped>
-@import "../styles/vars.scss";
+<style scoped>
 
 .item {
     text-decoration: none;
@@ -57,7 +58,7 @@ export default {
         opacity: 0.3;
     }
     &:hover {
-        background-color: $highlight-white;
+        background-color: #e7faec;
     }
     &.active {
         background-color: #cdf8f4;
@@ -67,7 +68,7 @@ export default {
     }
     .endpoint {
         font-size: 12px;
-        color: $dark-font-color3;
+        color: #575c62;
     }
 }
 

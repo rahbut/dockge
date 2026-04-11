@@ -2,69 +2,89 @@
     <transition name="slide-fade" appear>
         <div>
             <h1 v-if="isAdd" class="mb-3">{{ $t("compose") }}</h1>
-            <h1 v-else class="mb-3">
+            <h1 v-else class="mb-3 flex items-center gap-2">
                 <Uptime :stack="globalStack" :pill="true" /> {{ stack.name }}
-                <span v-if="$root.agentCount > 1" class="agent-name">
+                <span v-if="$root.agentCount > 1" class="text-sm text-[#575c62]">
                     ({{ endpointDisplay }})
                 </span>
             </h1>
 
-            <div v-if="stack.isManagedByDockge" class="mb-3">
-                <div class="btn-group me-2" role="group">
+            <div v-if="stack.isManagedByDockge" class="mb-3 flex flex-wrap gap-2">
+                <div class="btn-group">
                     <button v-if="isEditMode" class="btn btn-primary" :disabled="processing" @click="deployStack">
-                        <font-awesome-icon icon="rocket" class="me-1" />
+                        <RocketIcon :size="14" class="mr-1" />
                         {{ $t("deployStack") }}
                     </button>
 
                     <button v-if="isEditMode" class="btn btn-normal" :disabled="processing" @click="saveStack">
-                        <font-awesome-icon icon="save" class="me-1" />
+                        <SaveIcon :size="14" class="mr-1" />
                         {{ $t("saveStackDraft") }}
                     </button>
 
                     <button v-if="!isEditMode" class="btn btn-secondary" :disabled="processing" @click="enableEditMode">
-                        <font-awesome-icon icon="pen" class="me-1" />
+                        <PenIcon :size="14" class="mr-1" />
                         {{ $t("editStack") }}
                     </button>
 
                     <button v-if="!isEditMode && !active" class="btn btn-primary" :disabled="processing" @click="startStack">
-                        <font-awesome-icon icon="play" class="me-1" />
+                        <PlayIcon :size="14" class="mr-1" />
                         {{ $t("startStack") }}
                     </button>
 
-                    <button v-if="!isEditMode && active" class="btn btn-normal " :disabled="processing" @click="restartStack">
-                        <font-awesome-icon icon="rotate" class="me-1" />
+                    <button v-if="!isEditMode && active" class="btn btn-normal" :disabled="processing" @click="restartStack">
+                        <RotateCwIcon :size="14" class="mr-1" />
                         {{ $t("restartStack") }}
                     </button>
 
                     <button v-if="!isEditMode" class="btn btn-normal" :disabled="processing" @click="updateStack">
-                        <font-awesome-icon icon="cloud-arrow-down" class="me-1" />
+                        <CloudDownloadIcon :size="14" class="mr-1" />
                         {{ $t("updateStack") }}
                     </button>
 
                     <button v-if="!isEditMode && active" class="btn btn-normal" :disabled="processing" @click="stopStack">
-                        <font-awesome-icon icon="stop" class="me-1" />
+                        <SquareIcon :size="14" class="mr-1" />
                         {{ $t("stopStack") }}
                     </button>
 
-                    <BDropdown right text="" variant="normal">
-                        <BDropdownItem @click="downStack">
-                            <font-awesome-icon icon="stop" class="me-1" />
-                            {{ $t("downStack") }}
-                        </BDropdownItem>
-                    </BDropdown>
+                    <!-- More actions dropdown -->
+                    <Menu as="div" class="relative">
+                        <MenuButton class="btn btn-normal rounded-l-none px-3">
+                            <ChevronDownIcon :size="14" />
+                        </MenuButton>
+                        <transition
+                            enter-active-class="transition duration-100 ease-out"
+                            enter-from-class="transform scale-95 opacity-0"
+                            enter-to-class="transform scale-100 opacity-1"
+                            leave-active-class="transition duration-75 ease-in"
+                            leave-from-class="transform scale-100 opacity-1"
+                            leave-to-class="transform scale-95 opacity-0"
+                        >
+                            <MenuItems class="absolute right-0 mt-1 w-44 origin-top-right rounded-xl overflow-hidden shadow-xl bg-white dark:bg-[#0d1117] border border-gray-100 dark:border-[#1d2634] z-50 focus:outline-none">
+                                <MenuItem v-slot="{ active }">
+                                    <button
+                                        class="w-full text-left flex items-center gap-2 px-4 py-2 text-sm"
+                                        :class="active ? 'bg-gray-50 dark:bg-[#070a10]' : ''"
+                                        @click="downStack"
+                                    >
+                                        <SquareIcon :size="13" /> {{ $t("downStack") }}
+                                    </button>
+                                </MenuItem>
+                            </MenuItems>
+                        </transition>
+                    </Menu>
                 </div>
 
                 <button v-if="isEditMode && !isAdd" class="btn btn-normal" :disabled="processing" @click="discardStack">{{ $t("discardStack") }}</button>
-                <button v-if="!isEditMode" class="btn btn-danger" :disabled="processing" @click="showDeleteDialog = !showDeleteDialog">
-                    <font-awesome-icon icon="trash" class="me-1" />
+                <button v-if="!isEditMode" class="btn btn-danger" :disabled="processing" @click="showDeleteDialog = true">
+                    <Trash2Icon :size="14" class="mr-1" />
                     {{ $t("deleteStack") }}
                 </button>
             </div>
 
             <!-- URLs -->
-            <div v-if="urls.length > 0" class="mb-3">
+            <div v-if="urls.length > 0" class="mb-3 flex flex-wrap gap-2">
                 <a v-for="(link, index) in urls" :key="index" target="_blank" :href="link.url">
-                    <span class="badge bg-secondary me-2">{{ link.display }}</span>
+                    <span class="badge bg-secondary">{{ link.display }}</span>
                 </a>
             </div>
 
@@ -81,20 +101,17 @@
                 ></Terminal>
             </transition>
 
-            <div v-if="stack.isManagedByDockge" class="row">
-                <div class="col-lg-6">
+            <div v-if="stack.isManagedByDockge" class="flex flex-wrap gap-4">
+                <div class="w-full lg:w-[calc(50%-0.5rem)]">
                     <!-- General -->
                     <div v-if="isAdd">
                         <h4 class="mb-3">{{ $t("general") }}</h4>
                         <div class="shadow-box big-padding mb-3">
-                            <!-- Stack Name -->
                             <div>
                                 <label for="name" class="form-label">{{ $t("stackName") }}</label>
                                 <input id="name" v-model="stack.name" type="text" class="form-control" required @blur="stackNameToLowercase">
                                 <div class="form-text">{{ $t("Lowercase only") }}</div>
                             </div>
-
-                            <!-- Endpoint -->
                             <div class="mt-3">
                                 <label for="name" class="form-label">{{ $t("dockgeAgent") }}</label>
                                 <select v-model="stack.endpoint" class="form-select">
@@ -134,23 +151,18 @@
                         />
                     </div>
 
-
-
-                    <!-- General -->
+                    <!-- Extra (URLs) -->
                     <div v-if="isEditMode">
                         <h4 class="mb-3">{{ $t("extra") }}</h4>
                         <div class="shadow-box big-padding mb-3">
-                            <!-- URLs -->
                             <div class="mb-4">
-                                <label class="form-label">
-                                    {{ $t("url", 2) }}
-                                </label>
+                                <label class="form-label">{{ $t("url", 2) }}</label>
                                 <ArrayInput name="urls" :display-name="$t('url')" placeholder="https://" object-type="x-dockge" />
                             </div>
                         </div>
                     </div>
 
-                    <!-- Combined Terminal Output -->
+                    <!-- Combined Terminal -->
                     <div v-show="!isEditMode">
                         <h4 class="mb-3">{{ $t("terminal") }}</h4>
                         <Terminal
@@ -164,10 +176,10 @@
                         ></Terminal>
                     </div>
                 </div>
-                <div class="col-lg-6">
+
+                <div class="w-full lg:w-[calc(50%-0.5rem)]">
                     <h4 class="mb-3">{{ stack.composeFileName }}</h4>
 
-                    <!-- YAML editor -->
                     <div class="shadow-box mb-3 editor-box" :class="{'edit-mode' : isEditMode}">
                         <code-mirror
                             ref="editor"
@@ -182,11 +194,8 @@
                             @change="yamlCodeChange"
                         />
                     </div>
-                    <div v-if="isEditMode" class="mb-3">
-                        {{ yamlError }}
-                    </div>
+                    <div v-if="isEditMode" class="mb-3">{{ yamlError }}</div>
 
-                    <!-- ENV editor -->
                     <div v-if="isEditMode">
                         <h4 class="mb-3">.env</h4>
                         <div class="shadow-box mb-3 editor-box" :class="{'edit-mode' : isEditMode}">
@@ -206,13 +215,11 @@
                     </div>
 
                     <div v-if="isEditMode">
-                        <!-- Networks -->
                         <h4 class="mb-3">{{ $t("network", 2) }}</h4>
                         <div class="shadow-box big-padding mb-3">
                             <NetworkInput />
                         </div>
                     </div>
-
                 </div>
             </div>
 
@@ -221,9 +228,24 @@
             </div>
 
             <!-- Delete Dialog -->
-            <BModal v-model="showDeleteDialog" :cancelTitle="$t('cancel')" :okTitle="$t('deleteStack')" okVariant="danger" @ok="deleteDialog">
-                {{ $t("deleteStackMsg") }}
-            </BModal>
+            <TransitionRoot appear :show="showDeleteDialog" as="template">
+                <Dialog as="div" class="relative z-50" @close="showDeleteDialog = false">
+                    <TransitionChild as="template" enter="duration-200 ease-out" enter-from="opacity-0" enter-to="opacity-100" leave="duration-150 ease-in" leave-from="opacity-100" leave-to="opacity-0">
+                        <div class="fixed inset-0 bg-black/40 backdrop-blur-sm" />
+                    </TransitionChild>
+                    <div class="fixed inset-0 flex items-center justify-center p-4">
+                        <TransitionChild as="template" enter="duration-200 ease-out" enter-from="opacity-0 scale-95" enter-to="opacity-100 scale-100" leave="duration-150 ease-in" leave-from="opacity-100 scale-100" leave-to="opacity-0 scale-95">
+                            <DialogPanel class="modal-content w-full max-w-md bg-white dark:bg-[#0d1117] rounded-2xl shadow-2xl p-6">
+                                <p class="mb-6 text-sm text-gray-700 dark:text-[#b1b8c0]">{{ $t("deleteStackMsg") }}</p>
+                                <div class="flex justify-end gap-2">
+                                    <button class="btn btn-secondary" @click="showDeleteDialog = false">{{ $t("cancel") }}</button>
+                                    <button class="btn btn-danger" @click="deleteDialog">{{ $t("deleteStack") }}</button>
+                                </div>
+                            </DialogPanel>
+                        </TransitionChild>
+                    </div>
+                </Dialog>
+            </TransitionRoot>
         </div>
     </transition>
 </template>
@@ -245,7 +267,8 @@ import {
     PROGRESS_TERMINAL_ROWS,
     RUNNING
 } from "../../../common/util-common";
-import { BModal } from "bootstrap-vue-next";
+import { Dialog, DialogPanel, TransitionRoot, TransitionChild, Menu, MenuButton, MenuItems, MenuItem } from "@headlessui/vue";
+import { RocketIcon, SaveIcon, PenIcon, PlayIcon, RotateCwIcon, CloudDownloadIcon, SquareIcon, Trash2Icon, ChevronDownIcon } from "lucide-vue-next";
 import NetworkInput from "../components/NetworkInput.vue";
 import dotenv from "dotenv";
 import { ref } from "vue";
@@ -268,7 +291,23 @@ export default {
     components: {
         NetworkInput,
         CodeMirror,
-        BModal,
+        Dialog,
+        DialogPanel,
+        TransitionRoot,
+        TransitionChild,
+        Menu,
+        MenuButton,
+        MenuItems,
+        MenuItem,
+        RocketIcon,
+        SaveIcon,
+        PenIcon,
+        PlayIcon,
+        RotateCwIcon,
+        CloudDownloadIcon,
+        SquareIcon,
+        Trash2Icon,
+        ChevronDownIcon,
     },
     beforeRouteUpdate(to, from, next) {
         this.exitConfirm(next);
@@ -764,20 +803,8 @@ export default {
 };
 </script>
 
-<style scoped lang="scss">
-@import "../styles/vars.scss";
-
+<style scoped>
 .terminal {
     height: 200px;
-}
-
-.editor-box {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 14px;
-}
-
-.agent-name {
-    font-size: 13px;
-    color: $dark-font-color3;
 }
 </style>

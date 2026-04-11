@@ -1,7 +1,6 @@
 import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
-import Components from "unplugin-vue-components/vite";
-import { BootstrapVueNextResolver } from "unplugin-vue-components/resolvers";
+import tailwindcss from "@tailwindcss/vite";
 import viteCompression from "vite-plugin-compression";
 import "vue";
 
@@ -20,10 +19,8 @@ export default defineConfig({
         outDir: "../frontend-dist",
     },
     plugins: [
+        tailwindcss(),
         vue(),
-        Components({
-            resolvers: [ BootstrapVueNextResolver() ],
-        }),
         viteCompression({
             algorithm: "gzip",
             filter: viteCompressionFilter,

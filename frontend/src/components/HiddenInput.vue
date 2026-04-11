@@ -13,75 +13,40 @@
         >
 
         <a v-if="visibility == 'password'" class="btn btn-outline-primary" @click="showInput()">
-            <font-awesome-icon icon="eye" />
+            <EyeIcon :size="16" />
         </a>
         <a v-if="visibility == 'text'" class="btn btn-outline-primary" @click="hideInput()">
-            <font-awesome-icon icon="eye-slash" />
+            <EyeOffIcon :size="16" />
         </a>
     </div>
 </template>
 
 <script>
+import { EyeIcon, EyeOffIcon } from "lucide-vue-next";
+
 export default {
+    components: { EyeIcon, EyeOffIcon },
     props: {
-        /** The value of the input */
-        modelValue: {
-            type: String,
-            default: ""
-        },
-        /** A placeholder to use */
-        placeholder: {
-            type: String,
-            default: ""
-        },
-        /** Maximum length of the input */
-        maxlength: {
-            type: Number,
-            default: 255
-        },
-        /** Should the field auto complete */
-        autocomplete: {
-            type: String,
-            default: "new-password",
-        },
-        /** Is the input required? */
-        required: {
-            type: Boolean
-        },
-        /** Should the input be read only? */
-        readonly: {
-            type: String,
-            default: undefined,
-        },
+        modelValue: { type: String, default: "" },
+        placeholder: { type: String, default: "" },
+        maxlength: { type: Number, default: 255 },
+        autocomplete: { type: String, default: "new-password" },
+        required: { type: Boolean },
+        readonly: { type: String, default: undefined },
     },
     emits: [ "update:modelValue" ],
     data() {
-        return {
-            visibility: "password",
-        };
+        return { visibility: "password" };
     },
     computed: {
         model: {
-            get() {
-                return this.modelValue;
-            },
-            set(value) {
-                this.$emit("update:modelValue", value);
-            }
+            get() { return this.modelValue; },
+            set(value) { this.$emit("update:modelValue", value); }
         }
     },
-    created() {
-
-    },
     methods: {
-        /** Show users input in plain text */
-        showInput() {
-            this.visibility = "text";
-        },
-        /** Censor users input */
-        hideInput() {
-            this.visibility = "password";
-        },
+        showInput() { this.visibility = "text"; },
+        hideInput() { this.visibility = "password"; },
     }
 };
 </script>

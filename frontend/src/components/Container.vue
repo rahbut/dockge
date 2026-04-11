@@ -1,44 +1,39 @@
 <template>
-    <div class="shadow-box big-padding mb-3 container">
-        <div class="row">
-            <div class="col-7">
+    <div class="shadow-box big-padding mb-3">
+        <div class="flex gap-2">
+            <div class="flex-1 min-w-0">
                 <h4>{{ name }}</h4>
-                <div class="image mb-2">
-                    <span class="me-1">{{ imageName }}:</span><span class="tag">{{ imageTag }}</span>
+                <div class="image mb-2 text-sm text-gray-500">
+                    <span class="mr-1">{{ imageName }}:</span><span class="tag">{{ imageTag }}</span>
                 </div>
-                <div v-if="!isEditMode">
-                    <span class="badge me-1" :class="bgStyle">{{ status }}</span>
+                <div v-if="!isEditMode" class="flex flex-wrap gap-1">
+                    <span class="badge" :class="bgStyle">{{ status }}</span>
 
-                    <span v-if="updateStatus && updateStatus.updateAvailable" class="badge me-1 bg-warning" :title="$t('updateAvailable')">
-                        <font-awesome-icon icon="arrow-alt-circle-up" class="me-1" />{{ $t('updateAvailable') }}
+                    <span v-if="updateStatus && updateStatus.updateAvailable" class="badge bg-warning" :title="$t('updateAvailable')">
+                        <ArrowUpCircleIcon :size="12" class="mr-1 inline" />{{ $t('updateAvailable') }}
                     </span>
-                    <span v-else-if="updateStatus && updateStatus.error === 'registryError'" class="badge me-1 bg-secondary" :title="updateStatus.error">
+                    <span v-else-if="updateStatus && updateStatus.error === 'registryError'" class="badge bg-secondary" :title="updateStatus.error">
                         {{ $t(updateStatus.error) || updateStatus.error }}
                     </span>
 
                     <a v-for="port in (ports ?? envsubstService.ports)" :key="port" :href="parsePort(port).url" target="_blank">
-                        <span class="badge me-1 bg-secondary">{{ parsePort(port).display }}</span>
+                        <span class="badge bg-secondary">{{ parsePort(port).display }}</span>
                     </a>
                 </div>
             </div>
-            <div class="col-5">
-                <div class="function">
-                    <router-link v-if="!isEditMode" class="btn btn-normal" :to="terminalRouteLink" disabled="">
-                        <font-awesome-icon icon="terminal" />
-                        Bash
-                    </router-link>
-                </div>
+            <div class="flex items-center justify-end shrink-0">
+                <router-link v-if="!isEditMode" class="btn btn-normal" :to="terminalRouteLink">
+                    <TerminalIcon :size="14" class="mr-1" /> Bash
+                </router-link>
             </div>
         </div>
 
-        <div v-if="isEditMode" class="mt-2">
-            <button class="btn btn-normal me-2" @click="showConfig = !showConfig">
-                <font-awesome-icon icon="edit" />
-                {{ $t("Edit") }}
+        <div v-if="isEditMode" class="mt-2 flex gap-2">
+            <button class="btn btn-normal" @click="showConfig = !showConfig">
+                <PencilIcon :size="14" class="mr-1" /> {{ $t("Edit") }}
             </button>
-            <button class="btn btn-danger me-2" @click="remove">
-                <font-awesome-icon icon="trash" />
-                {{ $t("deleteContainer") }}
+            <button class="btn btn-danger" @click="remove">
+                <Trash2Icon :size="14" class="mr-1" /> {{ $t("deleteContainer") }}
             </button>
         </div>
 
@@ -107,7 +102,7 @@
                         {{ $t("network", 2) }}
                     </label>
 
-                    <div v-if="networkList.length === 0 && service.networks && service.networks.length > 0" class="text-warning mb-3">
+                    <div v-if="networkList.length === 0 && service.networks && service.networks.length > 0" class="text-yellow-500 mb-3">
                         {{ $t("NoNetworksAvailable") }}
                     </div>
 
@@ -129,9 +124,14 @@
 <script>
 import { defineComponent } from "vue";
 import { parseDockerPort } from "../../../common/util-common";
+import { ArrowUpCircleIcon, TerminalIcon, PencilIcon, Trash2Icon } from "lucide-vue-next";
 
 export default defineComponent({
     components: {
+        ArrowUpCircleIcon,
+        TerminalIcon,
+        PencilIcon,
+        Trash2Icon,
     },
     props: {
         name: {
@@ -281,25 +281,7 @@ export default defineComponent({
 });
 </script>
 
-<style scoped lang="scss">
-@import "../styles/vars";
-
-.container {
-    .image {
-        font-size: 0.8rem;
-        color: #6c757d;
-        .tag {
-            color: #33383b;
-        }
-    }
-
-    .function {
-        align-content: center;
-        display: flex;
-        height: 100%;
-        width: 100%;
-        align-items: center;
-        justify-content: end;
-    }
-}
+<style scoped>
+.image { font-size: 0.8rem; color: #6c757d; }
+.image .tag { color: #33383b; }
 </style>

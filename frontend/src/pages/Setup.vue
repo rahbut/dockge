@@ -1,6 +1,6 @@
 <template>
-    <div class="form-container" data-cy="setup-form">
-        <div class="form">
+    <div class="flex items-center pt-10 pb-10" data-cy="setup-form">
+        <div class="w-full max-w-[330px] p-4 mx-auto text-center">
             <form @submit.prevent="submit">
                 <div>
                     <object width="64" height="64" data="/icon.svg" />
@@ -9,11 +9,9 @@
                     </div>
                 </div>
 
-                <p class="mt-3">
-                    {{ $t("Create your admin account") }}
-                </p>
+                <p class="mt-3">{{ $t("Create your admin account") }}</p>
 
-                <div class="form-floating">
+                <div class="form-floating mt-3">
                     <select id="language" v-model="$root.language" class="form-select">
                         <option v-for="(lang, i) in $i18n.availableLocales" :key="`Lang${i}`" :value="lang">
                             {{ $i18n.messages[lang].languageName }}
@@ -37,7 +35,7 @@
                     <label for="repeat">{{ $t("Repeat Password") }}</label>
                 </div>
 
-                <button class="w-100 btn btn-primary mt-3" type="submit" :disabled="processing" data-cy="submit-setup-form">
+                <button class="w-full btn btn-primary mt-3" type="submit" :disabled="processing" data-cy="submit-setup-form">
                     {{ $t("Create") }}
                 </button>
             </form>
@@ -55,23 +53,15 @@ export default {
             repeatPassword: "",
         };
     },
-    watch: {
-
-    },
+    watch: {},
     mounted() {
-        // TODO: Check if it is a database setup
-
         this.$root.getSocket().emit("needSetup", (needSetup) => {
-            if (! needSetup) {
+            if (!needSetup) {
                 this.$router.push("/");
             }
         });
     },
     methods: {
-        /**
-         * Submit form data for processing
-         * @returns {void}
-         */
         submit() {
             this.processing = true;
 
@@ -87,7 +77,6 @@ export default {
 
                 if (res.ok) {
                     this.processing = true;
-
                     this.$root.login(this.username, this.password, "", () => {
                         this.processing = false;
                         this.$router.push("/");
@@ -98,41 +87,3 @@ export default {
     },
 };
 </script>
-
-<style lang="scss" scoped>
-.form-container {
-    display: flex;
-    align-items: center;
-    padding-top: 40px;
-    padding-bottom: 40px;
-}
-
-.form-floating {
-    > .form-select {
-        padding-left: 1.3rem;
-        padding-top: 1.525rem;
-        line-height: 1.35;
-
-        ~ label {
-            padding-left: 1.3rem;
-        }
-    }
-
-    > label {
-        padding-left: 1.3rem;
-    }
-
-    > .form-control {
-        padding-left: 1.3rem;
-    }
-}
-
-.form {
-
-    width: 100%;
-    max-width: 330px;
-    padding: 15px;
-    margin: auto;
-    text-align: center;
-}
-</style>
