@@ -428,8 +428,17 @@ export default {
 <style>
 .terminal {
     height: 100%;
+    background-color: #f6f8fa;
 }
 .dark .terminal {
     background-color: #000000 !important;
+}
+
+/* Override xterm.css default black viewport background for light mode */
+.xterm:not(.allow-transparency) .xterm-viewport {
+    background-color: #f6f8fa;
+}
+.dark .xterm:not(.allow-transparency) .xterm-viewport {
+    background-color: #000000;
 }
 </style>
