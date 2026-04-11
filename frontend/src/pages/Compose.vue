@@ -818,7 +818,4 @@ export default {
 </script>
 
 <style scoped>
-.terminal {
-    height: 200px;
-}
 </style>
