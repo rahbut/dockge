@@ -463,6 +463,7 @@ export default {
 
 <style>
 .terminal {
+    padding: 0;
     background-color: #f6f8fa;
 }
 .dark .terminal {
