@@ -10,21 +10,60 @@ on:
 permissions: {}
 
 jobs:
-  deploy:
+  build-frontend:
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
-    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts --no-fund
+
+      - name: Build frontend
+        run: npm run build:frontend
+
+      - name: Upload frontend dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend-dist/
+          retention-days: 1
+
+  build-docker:
+    needs: build-frontend
+    runs-on: ${{ matrix.runner }}
     permissions:
       contents: read
       packages: write
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-latest
+            arch: amd64
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
+            arch: arm64
 
     steps:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+      - name: Download frontend dist
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend-dist/
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -36,37 +75,48 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Use Node.js 24
-        uses: actions/setup-node@v6
+      - name: Build and push Docker image (${{ matrix.arch }})
+        uses: docker/build-push-action@v6
         with:
-          node-version: 24
+          context: .
+          file: ./docker/Dockerfile
+          platforms: ${{ matrix.platform }}
+          target: release
+          push: true
+          tags: ghcr.io/rahbut/dockge:latest-${{ matrix.arch }}
+          cache-from: type=gha,scope=${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.arch }}
 
-      - name: Install dependencies
-        run: npm ci --ignore-scripts --no-fund
+  push-manifest:
+    needs: build-docker
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build frontend
-        run: npm run build:frontend
-
-      - name: Build and push Docker image
-        run: >
-          docker buildx build
-          --platform linux/amd64,linux/arm64
-          -t ghcr.io/rahbut/dockge:latest
-          --target release
-          -f ./docker/Dockerfile .
-          --push
-        env:
-          DOCKER_BUILDKIT: 1
+      - name: Create and push multi-arch manifest
+        run: |
+          docker buildx imagetools create \
+            -t ghcr.io/rahbut/dockge:latest \
+            ghcr.io/rahbut/dockge:latest-amd64 \
+            ghcr.io/rahbut/dockge:latest-arm64
 
       - name: Report image size
         run: |
           manifest=$(docker buildx imagetools inspect ghcr.io/rahbut/dockge:latest --raw)
           header="| Platform | Compressed Size |"
           separator="|----------|----------------|"
-          echo "## Image Size Report" | tee -a $GITHUB_STEP_SUMMARY
-          echo "" | tee -a $GITHUB_STEP_SUMMARY
-          echo "$header" | tee -a $GITHUB_STEP_SUMMARY
-          echo "$separator" | tee -a $GITHUB_STEP_SUMMARY
+          echo "## Image Size Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "$header" >> $GITHUB_STEP_SUMMARY
+          echo "$separator" >> $GITHUB_STEP_SUMMARY
           for arch in amd64 arm64; do
             raw=$(echo "$manifest" | jq --arg arch "$arch" '[.manifests[] | select(.platform.architecture == $arch)] | .[0].size // empty')
             if [ -n "$raw" ]; then
@@ -74,5 +124,5 @@ jobs:
             else
               size="N/A"
             fi
-            echo "| $arch | $size |" | tee -a $GITHUB_STEP_SUMMARY
+            echo "| $arch | $size |" >> $GITHUB_STEP_SUMMARY
           done
