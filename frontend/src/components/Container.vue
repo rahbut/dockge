@@ -125,6 +125,8 @@
 import { defineComponent } from "vue";
 import { parseDockerPort } from "../../../common/util-common";
 import { ArrowUpCircleIcon, TerminalIcon, PencilIcon, Trash2Icon } from "lucide-vue-next";
+import ArrayInput from "./ArrayInput.vue";
+import ArraySelect from "./ArraySelect.vue";
 
 export default defineComponent({
     components: {
@@ -132,6 +134,8 @@ export default defineComponent({
         TerminalIcon,
         PencilIcon,
         Trash2Icon,
+        ArrayInput,
+        ArraySelect,
     },
     props: {
         name: {

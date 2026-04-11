@@ -270,6 +270,10 @@ import {
 import { Dialog as HDialog, DialogPanel as HDialogPanel, TransitionRoot, TransitionChild, Menu as HMenu, MenuButton as HMenuButton, MenuItems as HMenuItems, MenuItem as HMenuItem } from "@headlessui/vue";
 import { RocketIcon, SaveIcon, PenIcon, PlayIcon, RotateCwIcon, CloudDownloadIcon, SquareIcon, Trash2Icon, ChevronDownIcon } from "lucide-vue-next";
 import NetworkInput from "../components/NetworkInput.vue";
+import Container from "../components/Container.vue";
+import Terminal from "../components/Terminal.vue";
+import Uptime from "../components/Uptime.vue";
+import ArrayInput from "../components/ArrayInput.vue";
 import dotenv from "dotenv";
 import { ref } from "vue";
 
@@ -290,6 +294,10 @@ let serviceStatusTimeout = null;
 export default {
     components: {
         NetworkInput,
+        Container,
+        Terminal,
+        Uptime,
+        ArrayInput,
         CodeMirror,
         HDialog,
         HDialogPanel,
