@@ -89,14 +89,14 @@ h2 { font-size: 26px; }
     }
 
     .btn-primary {
-        color: white;
+        color: #1a2e1a;
         background: linear-gradient(135deg, var(--color-primary), var(--color-primary-end));
         border-color: transparent;
     }
     .btn-primary:hover,
     .btn-primary:focus,
     .btn-primary:active {
-        color: white;
+        color: #1a2e1a;
         background: linear-gradient(135deg, #5aabef, #72d095);
         border-color: var(--color-highlight);
     }
@@ -164,7 +164,7 @@ h2 { font-size: 26px; }
     .dark .btn-outline-normal.active { background-color: var(--color-dark-font2); }
 
     .btn-sm { border-radius: 25px; padding: 0.25rem 0.75rem; }
-    .btn-group { display: inline-flex; }
+    .btn-group { display: inline-flex; align-items: stretch; }
     .btn-group .btn:not(:first-child) { border-top-left-radius: 0; border-bottom-left-radius: 0; margin-left: -1px; }
     .btn-group .btn:not(:last-child) { border-top-right-radius: 0; border-bottom-right-radius: 0; }
 
@@ -356,6 +356,9 @@ h2 { font-size: 26px; }
     .editor-box {
         font-family: 'JetBrains Mono', monospace;
         font-size: 14px;
+        background-color: #282a36 !important;
+        border-radius: 10px;
+        padding: 8px;
     }
     .editor-box.edit-mode { background-color: #2c2f38 !important; }
 

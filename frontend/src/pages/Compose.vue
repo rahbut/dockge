@@ -48,7 +48,7 @@
 
                     <!-- More actions dropdown -->
                     <HMenu as="div" class="relative">
-                        <HMenuButton class="btn btn-normal rounded-l-none px-3">
+                        <HMenuButton class="btn btn-normal rounded-l-none px-3 self-stretch">
                             <ChevronDownIcon :size="14" />
                         </HMenuButton>
                         <transition
