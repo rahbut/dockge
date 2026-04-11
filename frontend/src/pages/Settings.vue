@@ -178,15 +178,16 @@ footer {
         transition: all ease-in-out 0.1s;
     }
 
-    .menu-item:hover { background: #e7faec; }
-    .dark .menu-item:hover { background: #161b22; }
+    .menu-item:hover { background: linear-gradient(135deg, #e7faec, #d4f5e0); color: #0d1f1e; }
+    .dark .menu-item:hover { background: var(--color-dark-bg2); color: var(--color-dark-font); }
     .active .menu-item {
-        background: #e7faec;
-        border-left: 4px solid #74c2ff;
-        border-top-left-radius: 0;
-        border-bottom-left-radius: 0;
+        background: linear-gradient(135deg, #cdf8f4, #d4f5e0);
+        color: #0d1f1e;
     }
-    .dark .active .menu-item { background: #161b22; }
+    .dark .active .menu-item {
+        background: linear-gradient(135deg, #1a3a38, #1a3028);
+        color: #cdf8f4;
+    }
 }
 
 .settings-content-header {
@@ -197,8 +198,14 @@ footer {
     margin-right: -20px;
     padding: 12.5px 1em;
     font-size: 26px;
+    background: linear-gradient(135deg, #f0fdf8, #e7faec);
+    color: #0d1f1e;
 }
-.dark .settings-content-header { background: #161b22; border-bottom: 0; }
+.dark .settings-content-header {
+    background: linear-gradient(135deg, #161b22, #0d1117);
+    color: var(--color-dark-font);
+    border-bottom: 0;
+}
 .mobile .settings-content-header { padding: 15px 0 0 0; }
 .dark .mobile .settings-content-header { background-color: transparent; }
 
