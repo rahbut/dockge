@@ -10,13 +10,7 @@
                 ⚠️ {{ $t("Frontend Version do not match backend version!") }}
             </div>
 
-            <div class="my-3 update-link"><a href="https://github.com/rahbut/dockge/releases" target="_blank" rel="noopener">{{ $t("Check Update On GitHub") }}</a></div>
 
-            <div class="mt-1">
-                <div class="form-check">
-                    <label><input v-model="settings.checkUpdate" type="checkbox" @change="saveSettings()" /> {{ $t("Show update if available") }}</label>
-                </div>
-            </div>
         </div>
     </div>
 </template>

@@ -41,11 +41,6 @@
                         {{ $t("updateStack") }}
                     </button>
 
-                    <button v-if="!isEditMode" class="btn btn-normal" :disabled="processing || checkingUpdates" @click="checkStackUpdates">
-                        <font-awesome-icon icon="arrows-rotate" :class="{ 'fa-spin': checkingUpdates }" class="me-1" />
-                        {{ checkingUpdates ? $t('checkingForUpdates') : $t('checkForUpdates') }}
-                    </button>
-
                     <button v-if="!isEditMode && active" class="btn btn-normal" :disabled="processing" @click="stopStack">
                         <font-awesome-icon icon="stop" class="me-1" />
                         {{ $t("stopStack") }}
@@ -340,7 +335,6 @@ export default {
             },
             serviceStatusList: {},
             updateDetails: null,
-            checkingUpdates: false,
             isEditMode: false,
             submitted: false,
             showDeleteDialog: false,
@@ -684,19 +678,6 @@ export default {
                 this.$root.toastRes(res);
                 if (res.ok) {
                     this.updateDetails = null;
-                }
-            });
-        },
-
-        checkStackUpdates() {
-            this.checkingUpdates = true;
-
-            this.$root.emitAgent(this.endpoint, "checkStackUpdates", this.stack.name, (res) => {
-                this.checkingUpdates = false;
-                if (res.ok) {
-                    this.updateDetails = res.updateDetails;
-                } else {
-                    this.$root.toastRes(res);
                 }
             });
         },
