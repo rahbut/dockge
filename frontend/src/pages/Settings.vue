@@ -77,9 +77,6 @@ export default {
                 general: {
                     title: this.$t("general"),
                 },
-                appearance: {
-                    title: this.$t("Appearance"),
-                },
                 security: {
                     title: this.$t("Security"),
                 },
@@ -112,7 +109,7 @@ export default {
          */
         loadGeneralPage() {
             if (!this.currentPage && !this.$root.isMobile) {
-                this.$router.push("/settings/appearance");
+                this.$router.push("/settings/general");
             }
         },
 
