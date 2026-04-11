@@ -267,18 +267,6 @@ export class MainSocketHandler extends SocketHandler {
             }
         });
 
-        // Disconnect all other socket clients of the user
-        socket.on("disconnectOtherSocketClients", async () => {
-            try {
-                checkLogin(socket);
-                server.disconnectAllSocketClients(socket.userID, socket.id);
-            } catch (e) {
-                if (e instanceof Error) {
-                    log.warn("disconnectOtherSocketClients", e.message);
-                }
-            }
-        });
-
         // composerize
         socket.on("composerize", async (dockerRunCommand : unknown, callback) => {
             try {

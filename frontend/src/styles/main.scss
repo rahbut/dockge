@@ -22,26 +22,12 @@ textarea.form-control {
     width: 10px;
 }
 
-.bg-maintenance {
-    color: white !important;
-    background-color: $maintenance !important;
-}
-
 .bg-dark {
     color: white;
 }
 
-.text-maintenance {
-    color: $maintenance !important;
-}
-
 ::placeholder {
     color: $dark-font-color3;
-}
-
-.incident a,
-.bg-maintenance a {
-    color: inherit;
 }
 
 .list-group {
@@ -92,11 +78,6 @@ optgroup {
         box-shadow: 0 15px 70px rgb(0 0 0);
         background-color: $dark-bg;
     }
-}
-
-.VuePagination__count {
-    font-size: 13px;
-    text-align: center;
 }
 
 .shadow-box {
@@ -186,53 +167,6 @@ optgroup {
     }
 }
 
-@media (max-width: 550px) {
-    .table-shadow-box {
-        padding: 10px !important;
-
-        thead {
-            display: none;
-        }
-
-        tbody {
-            .shadow-box {
-                background-color: white;
-            }
-        }
-
-        tr {
-            margin-top: 0 !important;
-            padding: 4px 10px !important;
-            display: block;
-            margin-bottom: 6px;
-
-            td:first-child {
-                font-weight: bold;
-            }
-
-            td:nth-child(-n+3) {
-                text-align: center;
-            }
-
-            td:last-child {
-                text-align: left;
-            }
-
-            td {
-                border-bottom: 1px solid $dark-font-color;
-                display: block;
-                padding: 4px;
-
-                .badge {
-                    margin: auto;
-                    display: block;
-                    width: 30%;
-                }
-            }
-        }
-    }
-}
-
 // Dark Theme override here
 .dark {
     background-color: #090c10;
@@ -279,11 +213,6 @@ optgroup {
         &.btn-info {
             color: white;
         }
-    }
-
-    .incident a,
-    .bg-maintenance a {
-        color: inherit;
     }
 
     .form-control,
@@ -390,20 +319,6 @@ optgroup {
 
             &.active {
                 background-color: $dark-bg2;
-            }
-        }
-    }
-
-    @media (max-width: 550px) {
-        .table-shadow-box {
-            tbody {
-                .shadow-box {
-                    background-color: $dark-bg2;
-
-                    td {
-                        border-bottom: 1px solid $dark-border-color;
-                    }
-                }
             }
         }
     }
@@ -589,56 +504,12 @@ optgroup {
     border-radius: 10px !important;
 }
 
-.spinner {
-    color: $primary;
-}
-
-
 h5.settings-subheading::after {
     content: "";
     display: block;
     width: 50%;
     padding-top: 8px;
     border-bottom: 1px solid $dark-border-color;
-}
-
-/* required class */
-.code-editor, .css-editor {
-    /* we dont use `language-` classes anymore so thats why we need to add background and text color manually */
-
-    border-radius: 1rem;
-    padding: 10px 5px;
-    border: 1px solid #ced4da;
-
-    .dark & {
-        background: $dark-bg2;
-        border: 1px solid $dark-border-color;
-    }
-}
-
-
-$shadow-box-padding: 20px;
-
-.shadow-box-with-fixed-bottom-bar {
-    padding-top: $shadow-box-padding;
-    padding-bottom: 0;
-    padding-right: $shadow-box-padding;
-    padding-left: $shadow-box-padding;
-}
-
-.fixed-bottom-bar {
-    position: sticky;
-    bottom: 0;
-    margin-left: -$shadow-box-padding;
-    margin-right: -$shadow-box-padding;
-    z-index: 100;
-    background-color: rgba(white, 0.2);
-    backdrop-filter: blur(2px);
-    border-radius: 0 0 10px 10px;
-
-    .dark & {
-        background-color: rgba($dark-header-bg, 0.9);
-    }
 }
 
 @media (max-width: 770px) {

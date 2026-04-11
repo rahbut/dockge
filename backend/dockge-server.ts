@@ -15,7 +15,6 @@ import { Socket } from "socket.io";
 import { MainSocketHandler } from "./socket-handlers/main-socket-handler";
 import { SocketHandler } from "./socket-handler";
 import { Settings } from "./settings";
-import dayjs from "dayjs";
 import { R } from "redbean-node";
 import { genSecret, isDev, LooseObject } from "../common/util-common";
 import { generatePasswordHash } from "./password-hash";
@@ -462,79 +461,6 @@ export class DockgeServer {
     }
 
     /**
-     * Attempt to get the current server timezone
-     * If this fails, fall back to environment variables and then make a
-     * guess.
-     * @returns {Promise<string>} Current timezone
-     */
-    async getTimezone() {
-        // From process.env.TZ
-        try {
-            if (process.env.TZ) {
-                this.checkTimezone(process.env.TZ);
-                return process.env.TZ;
-            }
-        } catch (e) {
-            if (e instanceof Error) {
-                log.warn("timezone", e.message + " in process.env.TZ");
-            }
-        }
-
-        const timezone = await Settings.get("serverTimezone");
-
-        // From Settings
-        try {
-            log.debug("timezone", "Using timezone from settings: " + timezone);
-            if (timezone) {
-                this.checkTimezone(timezone);
-                return timezone;
-            }
-        } catch (e) {
-            if (e instanceof Error) {
-                log.warn("timezone", e.message + " in settings");
-            }
-        }
-
-        // Guess
-        try {
-            const guess = dayjs.tz.guess();
-            log.debug("timezone", "Guessing timezone: " + guess);
-            if (guess) {
-                this.checkTimezone(guess);
-                return guess;
-            } else {
-                return "UTC";
-            }
-        } catch (e) {
-            // Guess failed, fall back to UTC
-            log.debug("timezone", "Guessed an invalid timezone. Use UTC as fallback");
-            return "UTC";
-        }
-    }
-
-    /**
-     * Get the current offset
-     * @returns {string} Time offset
-     */
-    getTimezoneOffset() {
-        return dayjs().format("Z");
-    }
-
-    /**
-     * Throw an error if the timezone is invalid
-     * @param {string} timezone Timezone to test
-     * @returns {void}
-     * @throws The timezone is invalid
-     */
-    checkTimezone(timezone : string) {
-        try {
-            dayjs.utc("2013-11-18 11:55").tz(timezone).format();
-        } catch (e) {
-            throw new Error("Invalid timezone:" + timezone);
-        }
-    }
-
-    /**
      * Initialize the data directory
      */
     initDataDir() {
@@ -630,10 +556,6 @@ export class DockgeServer {
         return list;
     }
 
-    get stackDirFullPath() {
-        return path.resolve(this.stacksDir);
-    }
-
     /**
      * Shutdown the application
      * Stops all monitors and closes the database connection.
@@ -674,16 +596,6 @@ export class DockgeServer {
                 }
             }
         }
-    }
-
-    isSSL() {
-        return this.config.sslKey && this.config.sslCert;
-    }
-
-    getLocalWebSocketURL() {
-        const protocol = this.isSSL() ? "wss" : "ws";
-        const host = this.config.hostname || "localhost";
-        return `${protocol}://${host}:${this.config.port}`;
     }
 
 }

@@ -127,15 +127,6 @@ export default {
     },
     data() {
         return {
-            page: 1,
-            perPage: 25,
-            initialPerPage: 25,
-            paginationConfig: {
-                hideCount: true,
-                chunksNavigation: "scroll",
-            },
-            importantHeartBeatListLength: 0,
-            displayedRecords: [],
             dockerRunCommand: "",
             showAgentForm: false,
             showRemoveAgentDialog: {},
@@ -162,39 +153,6 @@ export default {
         exitedNum() {
             return this.getStatusNum("exited");
         },
-        updatesAvailableFromStore() {
-            let count = 0;
-            for (let stackName in this.$root.completeStackList) {
-                const stack = this.$root.completeStackList[stackName];
-                if (stack.updateAvailable === true) {
-                    count++;
-                }
-            }
-            return count;
-        },
-    },
-
-    watch: {
-        perPage() {
-            this.$nextTick(() => {
-                this.getImportantHeartbeatListPaged();
-            });
-        },
-
-        page() {
-            this.getImportantHeartbeatListPaged();
-        },
-    },
-
-    mounted() {
-        this.initialPerPage = this.perPage;
-
-        window.addEventListener("resize", this.updatePerPage);
-        this.updatePerPage();
-    },
-
-    beforeUnmount() {
-        window.removeEventListener("resize", this.updatePerPage);
     },
 
     methods: {
@@ -278,64 +236,6 @@ export default {
             });
         },
 
-        /**
-         * Updates the displayed records when a new important heartbeat arrives.
-         * @param {object} heartbeat - The heartbeat object received.
-         * @returns {void}
-         */
-        onNewImportantHeartbeat(heartbeat) {
-            if (this.page === 1) {
-                this.displayedRecords.unshift(heartbeat);
-                if (this.displayedRecords.length > this.perPage) {
-                    this.displayedRecords.pop();
-                }
-                this.importantHeartBeatListLength += 1;
-            }
-        },
-
-        /**
-         * Retrieves the length of the important heartbeat list for all monitors.
-         * @returns {void}
-         */
-        getImportantHeartbeatListLength() {
-            this.$root.getSocket().emit("monitorImportantHeartbeatListCount", null, (res) => {
-                if (res.ok) {
-                    this.importantHeartBeatListLength = res.count;
-                    this.getImportantHeartbeatListPaged();
-                }
-            });
-        },
-
-        /**
-         * Retrieves the important heartbeat list for the current page.
-         * @returns {void}
-         */
-        getImportantHeartbeatListPaged() {
-            const offset = (this.page - 1) * this.perPage;
-            this.$root.getSocket().emit("monitorImportantHeartbeatListPaged", null, offset, this.perPage, (res) => {
-                if (res.ok) {
-                    this.displayedRecords = res.data;
-                }
-            });
-        },
-
-        /**
-         * Updates the number of items shown per page based on the available height.
-         * @returns {void}
-         */
-        updatePerPage() {
-            const tableContainer = this.$refs.tableContainer;
-            const tableContainerHeight = tableContainer.offsetHeight;
-            const availableHeight = window.innerHeight - tableContainerHeight;
-            const additionalPerPage = Math.floor(availableHeight / 58);
-
-            if (additionalPerPage > 0) {
-                this.perPage = Math.max(this.initialPerPage, this.perPage + additionalPerPage);
-            } else {
-                this.perPage = this.initialPerPage;
-            }
-
-        },
     },
 };
 </script>

@@ -23,22 +23,6 @@
                 {{ networkName }}
             </label>
 
-            <span v-if="false" class="text-danger ms-2 delete">Delete</span>
-        </div>
-
-        <div v-if="false" class="input-group mb-3">
-            <input
-                placeholder="New external network name..."
-                class="form-control"
-                @keyup.enter="createExternelNetwork"
-            />
-            <button class="btn btn-normal btn-sm  me-2" type="button">
-                {{ $t("createExternalNetwork") }}
-            </button>
-        </div>
-
-        <div v-if="false">
-            <button class="btn btn-primary btn-sm mt-3 me-2" @click="applyToYAML">{{ $t("applyToYAML") }}</button>
         </div>
     </div>
 </template>
@@ -219,9 +203,4 @@ export default {
     }
 }
 
-.delete {
-    text-decoration: underline;
-    font-size: 13px;
-    cursor: pointer;
-}
 </style>

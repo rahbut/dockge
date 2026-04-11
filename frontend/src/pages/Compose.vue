@@ -134,7 +134,7 @@
                         />
                     </div>
 
-                    <button v-if="false && isEditMode && jsonConfig.services && Object.keys(jsonConfig.services).length > 0" class="btn btn-normal mb-3" @click="addContainer">{{ $t("addContainer") }}</button>
+
 
                     <!-- General -->
                     <div v-if="isEditMode">
@@ -206,13 +206,6 @@
                     </div>
 
                     <div v-if="isEditMode">
-                        <!-- Volumes -->
-                        <div v-if="false">
-                            <h4 class="mb-3">{{ $t("volume", 2) }}</h4>
-                            <div class="shadow-box big-padding mb-3">
-                            </div>
-                        </div>
-
                         <!-- Networks -->
                         <h4 class="mb-3">{{ $t("network", 2) }}</h4>
                         <div class="shadow-box big-padding mb-3">
@@ -220,14 +213,6 @@
                         </div>
                     </div>
 
-                    <!-- <div class="shadow-box big-padding mb-3">
-                        <div class="mb-3">
-                            <label for="name" class="form-label"> Search Templates</label>
-                            <input id="name" v-model="name" type="text" class="form-control" placeholder="Search..." required>
-                        </div>
-
-                        <prism-editor v-if="false" v-model="yamlConfig" class="yaml-editor" :highlight="highlighter" line-numbers @input="yamlCodeChange"></prism-editor>
-                    </div>-->
                 </div>
             </div>
 
@@ -251,7 +236,6 @@ import { dracula as editorTheme } from "thememirror";
 import { lineNumbers, EditorView } from "@codemirror/view";
 import { parseDocument, Document } from "yaml";
 
-import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import {
     COMBINED_TERMINAL_COLS,
     COMBINED_TERMINAL_ROWS,
@@ -283,7 +267,6 @@ let serviceStatusTimeout = null;
 export default {
     components: {
         NetworkInput,
-        FontAwesomeIcon,
         CodeMirror,
         BModal,
     },
@@ -751,13 +734,7 @@ export default {
             this.isEditMode = true;
         },
 
-        checkYAML() {
-
-        },
-
         addContainer() {
-            this.checkYAML();
-
             if (this.jsonConfig.services[this.newContainerName]) {
                 this.$root.toastError("Container name already exists");
                 return;

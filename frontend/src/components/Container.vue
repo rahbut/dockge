@@ -36,7 +36,6 @@
                 <font-awesome-icon icon="edit" />
                 {{ $t("Edit") }}
             </button>
-            <button v-if="false" class="btn btn-normal me-2">Rename</button>
             <button class="btn btn-danger me-2" @click="remove">
                 <font-awesome-icon icon="trash" />
                 {{ $t("deleteContainer") }}
@@ -102,20 +101,6 @@
                     <ArrayInput name="environment" :display-name="$t('environmentVariable')" placeholder="KEY=VALUE" />
                 </div>
 
-                <!-- Container Name -->
-                <div v-if="false" class="mb-4">
-                    <label class="form-label">
-                        {{ $t("containerName") }}
-                    </label>
-                    <div class="input-group mb-3">
-                        <input
-                            v-model="service.container_name"
-                            class="form-control"
-                        />
-                    </div>
-                    <div class="form-text"></div>
-                </div>
-
                 <!-- Network -->
                 <div class="mb-4">
                     <label class="form-label">
@@ -143,12 +128,10 @@
 
 <script>
 import { defineComponent } from "vue";
-import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import { parseDockerPort } from "../../../common/util-common";
 
 export default defineComponent({
     components: {
-        FontAwesomeIcon,
     },
     props: {
         name: {
@@ -281,11 +264,6 @@ export default defineComponent({
                 return "";
             }
         },
-    },
-    mounted() {
-        if (this.first) {
-            //this.showConfig = true;
-        }
     },
     methods: {
         parsePort(port) {

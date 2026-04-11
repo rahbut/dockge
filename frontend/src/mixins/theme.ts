@@ -5,9 +5,6 @@ export default defineComponent({
         return {
             system: (window.matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light",
             userTheme: localStorage.theme,
-            statusPageTheme: "light",
-            forceStatusPageTheme: false,
-            path: "",
         };
     },
 
@@ -25,16 +22,8 @@ export default defineComponent({
     },
 
     watch: {
-        "$route.fullPath"(path) {
-            this.path = path;
-        },
-
         userTheme(to, from) {
             localStorage.theme = to;
-        },
-
-        styleElapsedTime(to, from) {
-            localStorage.styleElapsedTime = to;
         },
 
         theme(to, from) {
@@ -42,15 +31,6 @@ export default defineComponent({
             document.body.classList.add(this.theme);
             this.updateThemeColorMeta();
         },
-
-        userHeartbeatBar(to, from) {
-            localStorage.heartbeatBarTheme = to;
-        },
-
-        heartbeatBarTheme(to, from) {
-            document.body.classList.remove(from);
-            document.body.classList.add(this.heartbeatBarTheme);
-        }
     },
 
     mounted() {

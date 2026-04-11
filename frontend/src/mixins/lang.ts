@@ -1,6 +1,11 @@
-import { currentLocale } from "../i18n";
-import { setPageLocale } from "../util-frontend";
+import { currentLocale, localeDirection } from "../i18n";
 import { defineComponent } from "vue";
+
+function setPageLocale() {
+    const html = document.documentElement;
+    html.setAttribute("lang", currentLocale());
+    html.setAttribute("dir", localeDirection());
+}
 const langModules = import.meta.glob("../lang/*.json");
 
 export default defineComponent({

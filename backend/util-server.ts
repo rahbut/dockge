@@ -1,5 +1,4 @@
 import { Socket } from "socket.io";
-import { Terminal } from "./terminal";
 import { log } from "./log";
 import { ERROR_TYPE_VALIDATION } from "../common/util-common";
 import { R } from "redbean-node";
@@ -14,7 +13,6 @@ export interface JWTDecoded {
 
 export interface DockgeSocket extends Socket {
     userID: number;
-    consoleTerminal? : Terminal;
     instanceManager : AgentManager;
     endpoint : string;
     emitAgent : (eventName : string, ...args : unknown[]) => void;

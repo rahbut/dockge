@@ -18,10 +18,6 @@ export default {
     },
 
     computed: {
-        uptime() {
-            return this.$t("notAvailableShort");
-        },
-
         color() {
             return statusColor(this.stack?.status);
         },

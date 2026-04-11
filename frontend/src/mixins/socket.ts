@@ -124,10 +124,6 @@ export default defineComponent({
     created() {
         this.initSocketIO();
     },
-    mounted() {
-        return;
-
-    },
     methods: {
 
         endpointDisplayFunction(endpoint : string) {
