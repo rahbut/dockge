@@ -1,5 +1,5 @@
 <template>
-    <div class="shadow-box">
+    <div class="shadow-box" :class="{ 'fit-height': fitHeight }">
         <div v-pre ref="terminal" class="main-terminal"></div>
     </div>
 </template>
@@ -458,7 +458,8 @@ export default {
 </script>
 
 <style scoped>
-.main-terminal { height: 100%; overflow: hidden; }
+.main-terminal { overflow: hidden; }
+.fit-height .main-terminal { height: 100%; }
 </style>
 
 <style>
