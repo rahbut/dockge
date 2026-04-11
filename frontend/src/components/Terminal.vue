@@ -58,6 +58,13 @@ export default {
             default: TERMINAL_COLS,
         },
 
+        // When true, FitAddon adjusts both cols and rows to fill the container.
+        // When false (default), only cols are fitted; rows stay as the 'rows' prop.
+        fitHeight: {
+            type: Boolean,
+            default: false,
+        },
+
         // Mode
         // displayOnly: Only display terminal output
         // mainTerminal: Allow input limited commands and output
@@ -197,7 +204,7 @@ export default {
             if (entries[0].isIntersecting && this.terminal) {
                 this.terminal.options.theme = this.$root.isDark ? this.darkTermTheme : this.lightTermTheme;
                 if (this.terminalFitAddOn) {
-                    this.terminalFitAddOn.fit();
+                    this.fitTerminal();
                 }
             }
         });
@@ -344,13 +351,24 @@ export default {
                 this.terminal.loadAddon(this.terminalFitAddOn);
                 window.addEventListener("resize", this.onResizeEvent);
             }
-            this.terminalFitAddOn.fit();
+            this.fitTerminal();
+        },
+
+        fitTerminal() {
+            if (this.fitHeight) {
+                this.terminalFitAddOn.fit();
+            } else {
+                const dims = this.terminalFitAddOn.proposeDimensions();
+                if (dims) {
+                    this.terminal.resize(dims.cols, this.rows);
+                }
+            }
         },
         /**
          * Handles the resize event of the terminal component.
          */
         onResizeEvent() {
-            this.terminalFitAddOn.fit();
+            this.fitTerminal();
             let rows = this.terminal.rows;
             let cols = this.terminal.cols;
             this.$root.emitAgent(this.endpoint, "terminalResize", this.name, rows, cols);
@@ -440,7 +458,7 @@ export default {
 </script>
 
 <style scoped>
-.main-terminal { overflow: hidden; }
+.main-terminal { height: 100%; overflow: hidden; }
 </style>
 
 <style>
