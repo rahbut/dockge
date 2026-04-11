@@ -22,7 +22,6 @@
             <label class="form-check-label" :for=" 'external-network' +index">
                 {{ networkName }}
             </label>
-
         </div>
     </div>
 </template>

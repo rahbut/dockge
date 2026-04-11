@@ -20,7 +20,7 @@ export class Database {
      * SQLite file path (Default: ./data/dockge.db)
      * @type {string}
      */
-    static sqlitePath : string;
+    static sqlitePath: string;
 
     static noReject = true;
 
@@ -28,12 +28,12 @@ export class Database {
 
     static knexMigrationsPath = "./backend/migrations";
 
-    private static server : DockgeServer;
+    private static server: DockgeServer;
 
     /**
      * Use for decode the auth object
      */
-    jwtSecret? : string;
+    jwtSecret?: string;
 
     static async init(server : DockgeServer) {
         this.server = server;

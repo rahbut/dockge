@@ -1,6 +1,6 @@
 <template>
     <TransitionRoot appear :show="isOpen" as="template">
-        <Dialog as="div" class="relative z-50" @close="close">
+        <HDialog as="div" class="relative z-50" @close="close">
             <TransitionChild
                 as="template"
                 enter="duration-200 ease-out"
@@ -23,11 +23,11 @@
                     leave-from="opacity-100 scale-100"
                     leave-to="opacity-0 scale-95"
                 >
-                    <DialogPanel class="modal-content w-full max-w-md bg-white dark:bg-[#0d1117] rounded-2xl shadow-2xl p-6">
+                    <HDialogPanel class="modal-content w-full max-w-md bg-white dark:bg-[#0d1117] rounded-2xl shadow-2xl p-6">
                         <div class="flex items-center justify-between mb-4">
-                            <DialogTitle class="text-lg font-semibold">
+                            <HDialogTitle class="text-lg font-semibold">
                                 {{ title || $t("Confirm") }}
-                            </DialogTitle>
+                            </HDialogTitle>
                             <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200" @click="close">
                                 <XIcon :size="18" />
                             </button>
@@ -45,18 +45,18 @@
                                 {{ yesText }}
                             </button>
                         </div>
-                    </DialogPanel>
+                    </HDialogPanel>
                 </TransitionChild>
             </div>
-        </Dialog>
+        </HDialog>
     </TransitionRoot>
 </template>
 
 <script>
 import {
-    Dialog,
-    DialogPanel,
-    DialogTitle,
+    Dialog as HDialog,
+    DialogPanel as HDialogPanel,
+    DialogTitle as HDialogTitle,
     TransitionRoot,
     TransitionChild,
 } from "@headlessui/vue";
@@ -64,9 +64,9 @@ import { XIcon } from "lucide-vue-next";
 
 export default {
     components: {
-        Dialog,
-        DialogPanel,
-        DialogTitle,
+        HDialog,
+        HDialogPanel,
+        HDialogTitle,
         TransitionRoot,
         TransitionChild,
         XIcon,

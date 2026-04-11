@@ -30,13 +30,13 @@
                 </li>
 
                 <li v-if="$root.loggedIn" class="nav-item">
-                    <Menu as="div" class="relative">
-                        <MenuButton class="nav-link cursor-pointer flex gap-2 items-center rounded-md bg-black/10 dark:bg-white/10 px-3 py-2">
+                    <HMenu as="div" class="relative">
+                        <HMenuButton class="nav-link cursor-pointer flex gap-2 items-center rounded-md bg-black/10 dark:bg-white/10 px-3 py-2">
                             <div class="profile-pic flex items-center justify-center text-white font-bold text-xs rounded-full w-6 h-6" style="background: linear-gradient(135deg, var(--color-primary), var(--color-primary-end))">
                                 {{ $root.usernameFirstChar }}
                             </div>
                             <ChevronDownIcon :size="14" />
-                        </MenuButton>
+                        </HMenuButton>
 
                         <transition
                             enter-active-class="transition duration-100 ease-out"
@@ -46,7 +46,7 @@
                             leave-from-class="transform scale-100 opacity-1"
                             leave-to-class="transform scale-95 opacity-0"
                         >
-                            <MenuItems class="absolute right-0 mt-2 w-48 origin-top-right rounded-2xl overflow-hidden shadow-xl bg-white dark:bg-[#0d1117] border border-gray-100 dark:border-[#1d2634] focus:outline-none z-50">
+                            <HMenuItems class="absolute right-0 mt-2 w-48 origin-top-right rounded-2xl overflow-hidden shadow-xl bg-white dark:bg-[#0d1117] border border-gray-100 dark:border-[#1d2634] focus:outline-none z-50">
                                 <div class="px-4 py-3 text-sm border-b border-gray-100 dark:border-[#1d2634]">
                                     <i18n-t v-if="$root.username != null" tag="span" keypath="signedInDisp">
                                         <strong>{{ $root.username }}</strong>
@@ -54,7 +54,7 @@
                                     <span v-if="$root.username == null">{{ $t("signedInDispDisabled") }}</span>
                                 </div>
 
-                                <MenuItem v-slot="{ active }">
+                                <HMenuItem v-slot="{ active }">
                                     <button
                                         class="w-full text-left flex items-center gap-2 px-4 py-3 text-sm"
                                         :class="active ? 'bg-gray-50 dark:bg-[#070a10]' : ''"
@@ -62,9 +62,9 @@
                                     >
                                         <RefreshCwIcon :size="14" /> {{ $t("scanFolder") }}
                                     </button>
-                                </MenuItem>
+                                </HMenuItem>
 
-                                <MenuItem v-slot="{ active }">
+                                <HMenuItem v-slot="{ active }">
                                     <router-link
                                         to="/settings/general"
                                         class="flex items-center gap-2 px-4 py-3 text-sm"
@@ -72,9 +72,9 @@
                                     >
                                         <SettingsIcon :size="14" /> {{ $t("Settings") }}
                                     </router-link>
-                                </MenuItem>
+                                </HMenuItem>
 
-                                <MenuItem v-slot="{ active }">
+                                <HMenuItem v-slot="{ active }">
                                     <button
                                         class="w-full text-left flex items-center gap-2 px-4 py-3 text-sm border-t border-gray-100 dark:border-[#1d2634]"
                                         :class="active ? 'bg-gray-50 dark:bg-[#070a10]' : ''"
@@ -82,10 +82,10 @@
                                     >
                                         <LogOutIcon :size="14" /> {{ $t("Logout") }}
                                     </button>
-                                </MenuItem>
-                            </MenuItems>
+                                </HMenuItem>
+                            </HMenuItems>
                         </transition>
-                    </Menu>
+                    </HMenu>
                 </li>
             </ul>
         </header>
@@ -103,17 +103,17 @@
 
 <script>
 import Login from "../components/Login.vue";
-import { Menu, MenuButton, MenuItems, MenuItem } from "@headlessui/vue";
+import { Menu as HMenu, MenuButton as HMenuButton, MenuItems as HMenuItems, MenuItem as HMenuItem } from "@headlessui/vue";
 import { HomeIcon, TerminalIcon, ChevronDownIcon, RefreshCwIcon, SettingsIcon, LogOutIcon } from "lucide-vue-next";
 import { ALL_ENDPOINTS } from "../../../common/util-common";
 
 export default {
     components: {
         Login,
-        Menu,
-        MenuButton,
-        MenuItems,
-        MenuItem,
+        HMenu,
+        HMenuButton,
+        HMenuItems,
+        HMenuItem,
         HomeIcon,
         TerminalIcon,
         ChevronDownIcon,

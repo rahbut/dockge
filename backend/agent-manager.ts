@@ -13,10 +13,10 @@ import dayjs, { Dayjs } from "dayjs";
  */
 export class AgentManager {
 
-    protected socket : DockgeSocket;
-    protected agentSocketList : Record<string, SocketClient> = {};
-    protected agentLoggedInList : Record<string, boolean> = {};
-    protected _firstConnectTime : Dayjs = dayjs();
+    protected socket: DockgeSocket;
+    protected agentSocketList: Record<string, SocketClient> = {};
+    protected agentLoggedInList: Record<string, boolean> = {};
+    protected _firstConnectTime: Dayjs = dayjs();
 
     constructor(socket: DockgeSocket) {
         this.socket = socket;

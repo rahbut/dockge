@@ -256,7 +256,7 @@ export class DockerSocketHandler extends AgentSocketHandler {
                             updateAvailable: stack._updateAvailable,
                             updateDetails,
                         };
-                    } catch (e) {
+                    } catch {
                         allResults[stackName] = {
                             updateAvailable: null,
                             updateDetails: {},

@@ -40,13 +40,21 @@ export default {
     },
     computed: {
         model: {
-            get() { return this.modelValue; },
-            set(value) { this.$emit("update:modelValue", value); }
+            get() {
+                return this.modelValue;
+            },
+            set(value) {
+                this.$emit("update:modelValue", value);
+            }
         }
     },
     methods: {
-        showInput() { this.visibility = "text"; },
-        hideInput() { this.visibility = "password"; },
+        showInput() {
+            this.visibility = "text";
+        },
+        hideInput() {
+            this.visibility = "password";
+        },
     }
 };
 </script>

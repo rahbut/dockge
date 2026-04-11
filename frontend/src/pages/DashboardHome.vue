@@ -97,23 +97,23 @@
 
     <!-- Remove Agent Dialog -->
     <TransitionRoot appear :show="!!removeAgentConfirm" as="template">
-        <Dialog as="div" class="relative z-50" @close="removeAgentConfirm = null">
+        <HDialog as="div" class="relative z-50" @close="removeAgentConfirm = null">
             <TransitionChild as="template" enter="duration-200 ease-out" enter-from="opacity-0" enter-to="opacity-100" leave="duration-150 ease-in" leave-from="opacity-100" leave-to="opacity-0">
                 <div class="fixed inset-0 bg-black/40 backdrop-blur-sm" />
             </TransitionChild>
             <div class="fixed inset-0 flex items-center justify-center p-4">
                 <TransitionChild as="template" enter="duration-200 ease-out" enter-from="opacity-0 scale-95" enter-to="opacity-100 scale-100" leave="duration-150 ease-in" leave-from="opacity-100 scale-100" leave-to="opacity-0 scale-95">
-                    <DialogPanel class="modal-content w-full max-w-md bg-white dark:bg-[#0d1117] rounded-2xl shadow-2xl p-6">
+                    <HDialogPanel class="modal-content w-full max-w-md bg-white dark:bg-[#0d1117] rounded-2xl shadow-2xl p-6">
                         <p class="mb-1 text-sm font-medium">{{ removeAgentConfirm }}</p>
                         <p class="mb-6 text-sm text-gray-700 dark:text-[#b1b8c0]">{{ $t("removeAgentMsg") }}</p>
                         <div class="flex justify-end gap-2">
                             <button class="btn btn-secondary" @click="removeAgentConfirm = null">{{ $t("cancel") }}</button>
                             <button class="btn btn-danger" @click="removeAgent(removeAgentConfirm)">{{ $t("removeAgent") }}</button>
                         </div>
-                    </DialogPanel>
+                    </HDialogPanel>
                 </TransitionChild>
             </div>
-        </Dialog>
+        </HDialog>
     </TransitionRoot>
 
     <router-view ref="child" />
@@ -121,13 +121,13 @@
 
 <script>
 import { statusNameShort } from "../../../common/util-common";
-import { Dialog, DialogPanel, TransitionRoot, TransitionChild } from "@headlessui/vue";
+import { Dialog as HDialog, DialogPanel as HDialogPanel, TransitionRoot, TransitionChild } from "@headlessui/vue";
 import { RefreshCwIcon, ArrowUpCircleIcon, CheckCircleIcon, Trash2Icon } from "lucide-vue-next";
 
 export default {
     components: {
-        Dialog,
-        DialogPanel,
+        HDialog,
+        HDialogPanel,
         TransitionRoot,
         TransitionChild,
         RefreshCwIcon,

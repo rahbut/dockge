@@ -47,10 +47,10 @@
                     </button>
 
                     <!-- More actions dropdown -->
-                    <Menu as="div" class="relative">
-                        <MenuButton class="btn btn-normal rounded-l-none px-3">
+                    <HMenu as="div" class="relative">
+                        <HMenuButton class="btn btn-normal rounded-l-none px-3">
                             <ChevronDownIcon :size="14" />
-                        </MenuButton>
+                        </HMenuButton>
                         <transition
                             enter-active-class="transition duration-100 ease-out"
                             enter-from-class="transform scale-95 opacity-0"
@@ -59,19 +59,19 @@
                             leave-from-class="transform scale-100 opacity-1"
                             leave-to-class="transform scale-95 opacity-0"
                         >
-                            <MenuItems class="absolute right-0 mt-1 w-44 origin-top-right rounded-xl overflow-hidden shadow-xl bg-white dark:bg-[#0d1117] border border-gray-100 dark:border-[#1d2634] z-50 focus:outline-none">
-                                <MenuItem v-slot="{ active }">
+                            <HMenuItems class="absolute right-0 mt-1 w-44 origin-top-right rounded-xl overflow-hidden shadow-xl bg-white dark:bg-[#0d1117] border border-gray-100 dark:border-[#1d2634] z-50 focus:outline-none">
+                                <HMenuItem v-slot="{ active: itemActive }">
                                     <button
                                         class="w-full text-left flex items-center gap-2 px-4 py-2 text-sm"
-                                        :class="active ? 'bg-gray-50 dark:bg-[#070a10]' : ''"
+                                        :class="itemActive ? 'bg-gray-50 dark:bg-[#070a10]' : ''"
                                         @click="downStack"
                                     >
                                         <SquareIcon :size="13" /> {{ $t("downStack") }}
                                     </button>
-                                </MenuItem>
-                            </MenuItems>
+                                </HMenuItem>
+                            </HMenuItems>
                         </transition>
-                    </Menu>
+                    </HMenu>
                 </div>
 
                 <button v-if="isEditMode && !isAdd" class="btn btn-normal" :disabled="processing" @click="discardStack">{{ $t("discardStack") }}</button>
@@ -229,22 +229,22 @@
 
             <!-- Delete Dialog -->
             <TransitionRoot appear :show="showDeleteDialog" as="template">
-                <Dialog as="div" class="relative z-50" @close="showDeleteDialog = false">
+                <HDialog as="div" class="relative z-50" @close="showDeleteDialog = false">
                     <TransitionChild as="template" enter="duration-200 ease-out" enter-from="opacity-0" enter-to="opacity-100" leave="duration-150 ease-in" leave-from="opacity-100" leave-to="opacity-0">
                         <div class="fixed inset-0 bg-black/40 backdrop-blur-sm" />
                     </TransitionChild>
                     <div class="fixed inset-0 flex items-center justify-center p-4">
                         <TransitionChild as="template" enter="duration-200 ease-out" enter-from="opacity-0 scale-95" enter-to="opacity-100 scale-100" leave="duration-150 ease-in" leave-from="opacity-100 scale-100" leave-to="opacity-0 scale-95">
-                            <DialogPanel class="modal-content w-full max-w-md bg-white dark:bg-[#0d1117] rounded-2xl shadow-2xl p-6">
+                            <HDialogPanel class="modal-content w-full max-w-md bg-white dark:bg-[#0d1117] rounded-2xl shadow-2xl p-6">
                                 <p class="mb-6 text-sm text-gray-700 dark:text-[#b1b8c0]">{{ $t("deleteStackMsg") }}</p>
                                 <div class="flex justify-end gap-2">
                                     <button class="btn btn-secondary" @click="showDeleteDialog = false">{{ $t("cancel") }}</button>
                                     <button class="btn btn-danger" @click="deleteDialog">{{ $t("deleteStack") }}</button>
                                 </div>
-                            </DialogPanel>
+                            </HDialogPanel>
                         </TransitionChild>
                     </div>
-                </Dialog>
+                </HDialog>
             </TransitionRoot>
         </div>
     </transition>
@@ -267,7 +267,7 @@ import {
     PROGRESS_TERMINAL_ROWS,
     RUNNING
 } from "../../../common/util-common";
-import { Dialog, DialogPanel, TransitionRoot, TransitionChild, Menu, MenuButton, MenuItems, MenuItem } from "@headlessui/vue";
+import { Dialog as HDialog, DialogPanel as HDialogPanel, TransitionRoot, TransitionChild, Menu as HMenu, MenuButton as HMenuButton, MenuItems as HMenuItems, MenuItem as HMenuItem } from "@headlessui/vue";
 import { RocketIcon, SaveIcon, PenIcon, PlayIcon, RotateCwIcon, CloudDownloadIcon, SquareIcon, Trash2Icon, ChevronDownIcon } from "lucide-vue-next";
 import NetworkInput from "../components/NetworkInput.vue";
 import dotenv from "dotenv";
@@ -291,14 +291,14 @@ export default {
     components: {
         NetworkInput,
         CodeMirror,
-        Dialog,
-        DialogPanel,
+        HDialog,
+        HDialogPanel,
         TransitionRoot,
         TransitionChild,
-        Menu,
-        MenuButton,
-        MenuItems,
-        MenuItem,
+        HMenu,
+        HMenuButton,
+        HMenuItems,
+        HMenuItem,
         RocketIcon,
         SaveIcon,
         PenIcon,
@@ -384,7 +384,7 @@ export default {
                         pathname = "";
                     }
                     display = obj.host + pathname + obj.search;
-                } catch (e) {
+                } catch {
                     display = url;
                 }
 
