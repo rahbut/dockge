@@ -75,6 +75,49 @@ export default {
             cursorPosition: 0,
         };
     },
+    computed: {
+        darkTermTheme() {
+            return {
+                background: "#000000",
+                foreground: "#cccccc",
+                cursor: "#cccccc",
+                cursorAccent: "#000000",
+                selectionBackground: "#264f78",
+            };
+        },
+        lightTermTheme() {
+            return {
+                background: "#f6f8fa",
+                foreground: "#24292e",
+                cursor: "#24292e",
+                cursorAccent: "#f6f8fa",
+                selectionBackground: "#add6ff80",
+                black: "#24292e",
+                red: "#d73a49",
+                green: "#22863a",
+                yellow: "#b08800",
+                blue: "#0366d6",
+                magenta: "#6f42c1",
+                cyan: "#1b7c83",
+                white: "#6a737d",
+                brightBlack: "#959da5",
+                brightRed: "#cb2431",
+                brightGreen: "#28a745",
+                brightYellow: "#dbab09",
+                brightBlue: "#2188ff",
+                brightMagenta: "#8a63d2",
+                brightCyan: "#3192aa",
+                brightWhite: "#d1d5da",
+            };
+        },
+    },
+    watch: {
+        "$root.isDark"(isDark) {
+            if (this.terminal) {
+                this.terminal.options.theme = isDark ? this.darkTermTheme : this.lightTermTheme;
+            }
+        },
+    },
     created() {
 
     },
@@ -91,6 +134,7 @@ export default {
             cursorBlink,
             cols: this.cols,
             rows: this.rows,
+            theme: this.$root.isDark ? this.darkTermTheme : this.lightTermTheme,
         });
 
         if (this.mode === "mainTerminal") {
@@ -383,7 +427,9 @@ export default {
 
 <style>
 .terminal {
-    background-color: black !important;
     height: 100%;
+}
+.dark .terminal {
+    background-color: #000000 !important;
 }
 </style>

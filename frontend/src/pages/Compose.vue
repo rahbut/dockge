@@ -47,8 +47,8 @@
                     </button>
 
                     <!-- More actions dropdown -->
-                    <HMenu as="div" class="relative">
-                        <HMenuButton class="btn btn-normal rounded-l-none px-3 self-stretch">
+                    <HMenu as="div" class="relative flex items-stretch">
+                        <HMenuButton class="btn btn-normal rounded-l-none px-3">
                             <ChevronDownIcon :size="14" />
                         </HMenuButton>
                         <transition
@@ -187,7 +187,7 @@
                             :extensions="extensions"
                             minimal
                             wrap="true"
-                            dark="true"
+                            :dark="$root.isDark"
                             tab="true"
                             :disabled="!isEditMode"
                             :hasFocus="editorFocus"
@@ -205,7 +205,7 @@
                                 :extensions="extensionsEnv"
                                 minimal
                                 wrap="true"
-                                dark="true"
+                                :dark="$root.isDark"
                                 tab="true"
                                 :disabled="!isEditMode"
                                 :hasFocus="editorFocus"
@@ -254,7 +254,7 @@
 import CodeMirror from "vue-codemirror6";
 import { yaml } from "@codemirror/lang-yaml";
 import { python } from "@codemirror/lang-python";
-import { dracula as editorTheme } from "thememirror";
+import { dracula, solarizedLight } from "thememirror";
 import { lineNumbers, EditorView } from "@codemirror/view";
 import { parseDocument, Document } from "yaml";
 
@@ -331,23 +331,8 @@ export default {
             return null;
         };
 
-        const extensions = [
-            editorTheme,
-            yaml(),
-            lineNumbers(),
-            EditorView.focusChangeEffect.of(focusEffectHandler)
-        ];
-
-        const extensionsEnv = [
-            editorTheme,
-            python(),
-            lineNumbers(),
-            EditorView.focusChangeEffect.of(focusEffectHandler)
-        ];
-
-        return { extensions,
-            extensionsEnv,
-            editorFocus };
+        return { editorFocus,
+            focusEffectHandler };
     },
     yamlDoc: null,  // For keeping the yaml comments
     data() {
@@ -373,6 +358,28 @@ export default {
         };
     },
     computed: {
+        editorTheme() {
+            return this.$root.isDark ? dracula : solarizedLight;
+        },
+
+        extensions() {
+            return [
+                this.editorTheme,
+                yaml(),
+                lineNumbers(),
+                EditorView.focusChangeEffect.of(this.focusEffectHandler),
+            ];
+        },
+
+        extensionsEnv() {
+            return [
+                this.editorTheme,
+                python(),
+                lineNumbers(),
+                EditorView.focusChangeEffect.of(this.focusEffectHandler),
+            ];
+        },
+
         endpointDisplay() {
             return this.$root.endpointDisplayFunction(this.endpoint);
         },
