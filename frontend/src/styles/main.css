@@ -347,9 +347,9 @@ h2 { font-size: 26px; }
         padding: 0 8px;
     }
     .stack-list .item:hover { background-color: var(--color-highlight-white); }
-    .stack-list .item.active { background-color: #cdf8f4; }
-    .dark .stack-list .item:hover,
-    .dark .stack-list .item.active { background-color: var(--color-dark-bg2); }
+    .stack-list .item.active { background-color: #cdf8f4; color: #0d1f1e; }
+    .dark .stack-list .item:hover { background-color: var(--color-dark-bg2); }
+    .dark .stack-list .item.active { background-color: #1a3a38; color: #cdf8f4; }
     .stack-list .item .title { display: inline-block; margin-top: -4px; }
 
     /* --- Editor box (CodeMirror wrapper) --- */

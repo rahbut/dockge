@@ -29,6 +29,14 @@
                     </router-link>
                 </li>
 
+                <li v-if="$root.loggedIn" class="nav-item me-2">
+                    <button class="nav-link" :title="themeLabel" @click="cycleTheme">
+                        <SunIcon v-if="$root.userTheme === 'light'" :size="16" />
+                        <MoonIcon v-else-if="$root.userTheme === 'dark'" :size="16" />
+                        <SunMoonIcon v-else :size="16" />
+                    </button>
+                </li>
+
                 <li v-if="$root.loggedIn" class="nav-item">
                     <HMenu as="div" class="relative">
                         <HMenuButton class="nav-link cursor-pointer flex gap-2 items-center rounded-md bg-black/10 dark:bg-white/10 px-3 py-2">
@@ -104,7 +112,7 @@
 <script>
 import Login from "../components/Login.vue";
 import { Menu as HMenu, MenuButton as HMenuButton, MenuItems as HMenuItems, MenuItem as HMenuItem } from "@headlessui/vue";
-import { HomeIcon, TerminalIcon, ChevronDownIcon, RefreshCwIcon, SettingsIcon, LogOutIcon } from "lucide-vue-next";
+import { HomeIcon, TerminalIcon, ChevronDownIcon, RefreshCwIcon, SettingsIcon, LogOutIcon, SunIcon, MoonIcon, SunMoonIcon } from "lucide-vue-next";
 import { ALL_ENDPOINTS } from "../../../common/util-common";
 
 export default {
@@ -120,6 +128,9 @@ export default {
         RefreshCwIcon,
         SettingsIcon,
         LogOutIcon,
+        SunIcon,
+        MoonIcon,
+        SunMoonIcon,
     },
 
     computed: {
@@ -129,6 +140,11 @@ export default {
             classes["mobile"] = this.$root.isMobile;
             return classes;
         },
+
+        themeLabel() {
+            const labels = { light: "Light mode", dark: "Dark mode", auto: "Auto (system)" };
+            return labels[this.$root.userTheme] ?? "Auto (system)";
+        },
     },
 
     methods: {
@@ -136,6 +152,13 @@ export default {
             this.$root.emitAgent(ALL_ENDPOINTS, "requestStackList", (res) => {
                 this.$root.toastRes(res);
             });
+        },
+
+        cycleTheme() {
+            const order = [ "light", "dark", "auto" ];
+            const current = this.$root.userTheme ?? "dark";
+            const next = order[(order.indexOf(current) + 1) % order.length];
+            this.$root.userTheme = next;
         },
     },
 };

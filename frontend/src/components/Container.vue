@@ -3,7 +3,7 @@
         <div class="flex gap-2">
             <div class="flex-1 min-w-0">
                 <h4>{{ name }}</h4>
-                <div class="image mb-2 text-sm text-gray-500">
+                <div class="image mb-2 text-sm text-gray-500 dark:text-gray-400">
                     <span class="mr-1">{{ imageName }}:</span><span class="tag">{{ imageTag }}</span>
                 </div>
                 <div v-if="!isEditMode" class="flex flex-wrap gap-1">

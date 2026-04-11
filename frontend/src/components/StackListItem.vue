@@ -62,6 +62,7 @@ export default {
     }
     &.active {
         background-color: #cdf8f4;
+        color: #0d1f1e;
     }
     .title {
         margin-top: -4px;

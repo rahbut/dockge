@@ -44,6 +44,6 @@ export default {
 </script>
 
 <style scoped>
-.badge { min-width: 62px; }
+.badge { min-width: 62px; text-align: center; justify-content: center; }
 .fixed-width { width: 62px; overflow: hidden; text-overflow: ellipsis; }
 </style>
