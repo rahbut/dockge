@@ -86,20 +86,32 @@ jobs:
           # The healthcheck subcommand is built into dockge-server itself —
           # no separate binary needed.
 
-      - name: Download + strip Docker CLI (${{ matrix.arch }})
+      - name: Download Docker CLI (${{ matrix.arch }})
         run: |
+          # Extract to a temp dir first then move, to avoid issues with
+          # --strip-components and file filters on some tar implementations.
+          mkdir -p /tmp/docker-extract
           curl -fsSL \
             "https://download.docker.com/linux/static/stable/${{ matrix.docker_arch }}/docker-${{ env.DOCKER_VERSION }}.tgz" \
-            | tar -xz --strip-components=1 -C dist docker/docker
-          strip --strip-all dist/docker
+            | tar -xz -C /tmp/docker-extract
+          mv /tmp/docker-extract/docker/docker dist/docker
+          chmod +x dist/docker
 
-      - name: Download + strip Docker Compose plugin (${{ matrix.arch }})
+      - name: Download Docker Compose plugin (${{ matrix.arch }})
         run: |
           curl -fsSL \
             "https://github.com/docker/compose/releases/download/${{ env.COMPOSE_VERSION }}/docker-compose-linux-${{ matrix.compose_arch }}" \
             -o dist/docker-compose
           chmod +x dist/docker-compose
-          strip --strip-all dist/docker-compose
+
+      - name: Strip binaries (native arch only)
+        # strip only works on binaries matching the runner's native arch (amd64).
+        # The Go binaries are already stripped via -ldflags="-s -w".
+        # Docker CLI + Compose are not stripped for arm64 — the size difference
+        # is negligible and cross-arch strip requires extra toolchain setup.
+        if: matrix.arch == 'amd64'
+        run: |
+          strip --strip-all dist/docker dist/docker-compose
 
       - name: List artifact sizes
         run: ls -lh dist/
