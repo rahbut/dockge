@@ -2,14 +2,23 @@ name: Deploy
 
 on:
   workflow_run:
-    workflows: ["Node.js CI - Dockge"]
+    workflows: ["Go CI - Dockge"]
     branches: [main]
     types: [completed]
-  workflow_dispatch:  # Allow manual trigger
+  workflow_dispatch:
 
 permissions: {}
 
+# ── Pinned versions ────────────────────────────────────────────────────────────
+env:
+  GO_VERSION:      "1.26.2"
+  DOCKER_VERSION:  "29.4.0"
+  COMPOSE_VERSION: "v5.1.2"
+  REGISTRY:        ghcr.io
+  IMAGE_NAME:      ghcr.io/rahbut/dockge
+
 jobs:
+  # ── 1. Build the Vue frontend ────────────────────────────────────────────────
   build-frontend:
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
@@ -18,75 +27,145 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: npm
 
-      - name: Install dependencies
-        run: npm ci --ignore-scripts --no-fund
+      - run: npm ci --ignore-scripts --no-fund
 
-      - name: Build frontend
-        run: npm run build:frontend
+      - run: npm run build:frontend
 
-      - name: Upload frontend dist
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: frontend-dist
           path: frontend-dist/
           retention-days: 1
 
-  build-docker:
+  # ── 2. Cross-compile Go + download/strip Docker tools (one job per arch) ────
+  #
+  # Why on the runner rather than inside Docker:
+  #   - CGO_ENABLED=0 Go cross-compilation is native and takes ~10 s
+  #   - Docker CLI + Compose are downloaded once per arch, stripped with binutils
+  #   - The Dockerfile becomes a pure COPY assembly — no compiler, no curl,
+  #     no QEMU emulation needed, fully reproducible from checked-in artifacts
+  build-binaries:
     needs: build-frontend
-    runs-on: ${{ matrix.runner }}
-    permissions:
-      contents: read
-      packages: write
-    timeout-minutes: 30
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         include:
-          - platform: linux/amd64
-            runner: ubuntu-latest
-            arch: amd64
-          - platform: linux/arm64
-            runner: ubuntu-24.04-arm
-            arch: arm64
+          - arch:         amd64
+            go_arch:      amd64
+            docker_arch:  x86_64
+            compose_arch: x86_64
+          - arch:         arm64
+            go_arch:      arm64
+            docker_arch:  aarch64
+            compose_arch: aarch64
 
     steps:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
 
-      - name: Download frontend dist
-        uses: actions/download-artifact@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Compile Go backend (${{ matrix.arch }})
+        run: |
+          mkdir -p dist
+          CGO_ENABLED=0 GOOS=linux GOARCH=${{ matrix.go_arch }} \
+            go build \
+              -ldflags="-s -w -X main.Version=$(cat backend/version.txt 2>/dev/null || echo dev)" \
+              -trimpath \
+              -o dist/dockge-server \
+              ./backend/
+          # The healthcheck subcommand is built into dockge-server itself —
+          # no separate binary needed.
+
+      - name: Download + strip Docker CLI (${{ matrix.arch }})
+        run: |
+          curl -fsSL \
+            "https://download.docker.com/linux/static/stable/${{ matrix.docker_arch }}/docker-${{ env.DOCKER_VERSION }}.tgz" \
+            | tar -xz --strip-components=1 -C dist docker/docker
+          strip --strip-all dist/docker
+
+      - name: Download + strip Docker Compose plugin (${{ matrix.arch }})
+        run: |
+          curl -fsSL \
+            "https://github.com/docker/compose/releases/download/${{ env.COMPOSE_VERSION }}/docker-compose-linux-${{ matrix.compose_arch }}" \
+            -o dist/docker-compose
+          chmod +x dist/docker-compose
+          strip --strip-all dist/docker-compose
+
+      - name: List artifact sizes
+        run: ls -lh dist/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ matrix.arch }}
+          path: dist/
+          retention-days: 1
+
+  # ── 3. Assemble arch-specific Docker images ──────────────────────────────────
+  #
+  # The Dockerfile is now a pure COPY assembly — no compiler, no curl, no QEMU.
+  # docker/build-push-action still sets up BuildKit for layer caching, but no
+  # emulation is needed because there is no RUN instruction with native code.
+  build-docker:
+    needs: build-binaries
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist-${{ matrix.arch }}
+          path: dist/
+
+      - uses: actions/download-artifact@v4
         with:
           name: frontend-dist
           path: frontend-dist/
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      # Ensure all binaries are executable after artifact round-trip.
+      - run: chmod +x dist/dockge-server dist/docker dist/docker-compose
 
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
         with:
-          registry: ghcr.io
+          registry: ${{ env.REGISTRY }}
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push Docker image (${{ matrix.arch }})
-        uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/Dockerfile
-          platforms: ${{ matrix.platform }}
+          # No platform emulation needed — the Dockerfile has no RUN instructions
+          # that execute native code. BuildKit only needs to know the target OCI
+          # platform label to embed in the manifest.
+          platforms: linux/${{ matrix.arch }}
           target: release
           push: true
-          tags: ghcr.io/rahbut/dockge:latest-${{ matrix.arch }}
+          tags: ${{ env.IMAGE_NAME }}:latest-${{ matrix.arch }}
           cache-from: type=gha,scope=${{ matrix.arch }}
           cache-to: type=gha,mode=max,scope=${{ matrix.arch }}
 
+  # ── 4. Combine arch images into a multi-arch manifest ───────────────────────
   push-manifest:
     needs: build-docker
     runs-on: ubuntu-latest
@@ -94,35 +173,33 @@ jobs:
       contents: read
       packages: write
     steps:
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
+      - uses: docker/login-action@v3
         with:
-          registry: ghcr.io
+          registry: ${{ env.REGISTRY }}
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create and push multi-arch manifest
         run: |
           docker buildx imagetools create \
-            -t ghcr.io/rahbut/dockge:latest \
-            ghcr.io/rahbut/dockge:latest-amd64 \
-            ghcr.io/rahbut/dockge:latest-arm64
+            -t ${{ env.IMAGE_NAME }}:latest \
+            ${{ env.IMAGE_NAME }}:latest-amd64 \
+            ${{ env.IMAGE_NAME }}:latest-arm64
 
-      - name: Report image size
+      - name: Report compressed image sizes
         run: |
-          manifest=$(docker buildx imagetools inspect ghcr.io/rahbut/dockge:latest --raw)
-          header="| Platform | Compressed Size |"
-          separator="|----------|----------------|"
+          manifest=$(docker buildx imagetools inspect ${{ env.IMAGE_NAME }}:latest --raw)
           echo "## Image Size Report" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "$header" >> $GITHUB_STEP_SUMMARY
-          echo "$separator" >> $GITHUB_STEP_SUMMARY
+          echo ""                     >> $GITHUB_STEP_SUMMARY
+          echo "| Platform | Compressed Size |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|----------------|"  >> $GITHUB_STEP_SUMMARY
           for arch in amd64 arm64; do
-            raw=$(echo "$manifest" | jq --arg arch "$arch" '[.manifests[] | select(.platform.architecture == $arch)] | .[0].size // empty')
+            raw=$(echo "$manifest" | jq --arg arch "$arch" \
+              '[.manifests[] | select(.platform.architecture == $arch)] | .[0].size // empty')
             if [ -n "$raw" ]; then
               size=$(echo "$raw" | numfmt --to=iec-i --suffix=B)
             else
               size="N/A"
             fi
-            echo "| $arch | $size |" >> $GITHUB_STEP_SUMMARY
+            echo "| linux/$arch | $size |" >> $GITHUB_STEP_SUMMARY
           done

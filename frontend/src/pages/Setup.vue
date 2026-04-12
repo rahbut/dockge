@@ -11,29 +11,17 @@
 
                 <p class="mt-3">{{ $t("Create your admin account") }}</p>
 
-                <div class="form-floating mt-3">
-                    <select id="language" v-model="$root.language" class="form-select">
-                        <option v-for="(lang, i) in $i18n.availableLocales" :key="`Lang${i}`" :value="lang">
-                            {{ $i18n.messages[lang].languageName }}
-                        </option>
-                    </select>
-                    <label for="language" class="form-label">{{ $t("Language") }}</label>
-                </div>
+                <select v-model="$root.language" class="form-select mt-3">
+                    <option v-for="(lang, i) in $i18n.availableLocales" :key="`Lang${i}`" :value="lang">
+                        {{ $i18n.messages[lang].languageName }}
+                    </option>
+                </select>
 
-                <div class="form-floating mt-3">
-                    <input id="floatingInput" v-model="username" type="text" class="form-control" :placeholder="$t('Username')" required data-cy="username-input">
-                    <label for="floatingInput">{{ $t("Username") }}</label>
-                </div>
+                <input v-model="username" type="text" class="form-control mt-3" :placeholder="$t('Username')" required data-cy="username-input">
 
-                <div class="form-floating mt-3">
-                    <input id="floatingPassword" v-model="password" type="password" class="form-control" :placeholder="$t('Password')" required data-cy="password-input">
-                    <label for="floatingPassword">{{ $t("Password") }}</label>
-                </div>
+                <input v-model="password" type="password" class="form-control mt-3" :placeholder="$t('Password')" required data-cy="password-input">
 
-                <div class="form-floating mt-3">
-                    <input id="repeat" v-model="repeatPassword" type="password" class="form-control" :placeholder="$t('Repeat Password')" required data-cy="password-repeat-input">
-                    <label for="repeat">{{ $t("Repeat Password") }}</label>
-                </div>
+                <input v-model="repeatPassword" type="password" class="form-control mt-3" :placeholder="$t('Repeat Password')" required data-cy="password-repeat-input">
 
                 <button class="w-full btn btn-primary mt-3" type="submit" :disabled="processing" data-cy="submit-setup-form">
                     {{ $t("Create") }}

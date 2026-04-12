@@ -4,20 +4,11 @@
             <form @submit.prevent="submit">
                 <h1 class="text-xl mb-3 font-normal" />
 
-                <div v-if="!tokenRequired" class="form-floating">
-                    <input id="floatingInput" v-model="username" type="text" class="form-control" placeholder="Username" autocomplete="username" required>
-                    <label for="floatingInput">{{ $t("Username") }}</label>
-                </div>
+                <input v-if="!tokenRequired" v-model="username" type="text" class="form-control" :placeholder="$t('Username')" autocomplete="username" required>
 
-                <div v-if="!tokenRequired" class="form-floating mt-3">
-                    <input id="floatingPassword" v-model="password" type="password" class="form-control" placeholder="Password" autocomplete="current-password" required>
-                    <label for="floatingPassword">{{ $t("Password") }}</label>
-                </div>
+                <input v-if="!tokenRequired" v-model="password" type="password" class="form-control mt-3" :placeholder="$t('Password')" autocomplete="current-password" required>
 
-                <div v-if="tokenRequired" class="form-floating mt-3">
-                    <input id="otp" v-model="token" type="text" maxlength="6" class="form-control" placeholder="123456" autocomplete="one-time-code" required>
-                    <label for="otp">{{ $t("Token") }}</label>
-                </div>
+                <input v-if="tokenRequired" v-model="token" type="text" maxlength="6" class="form-control mt-3" :placeholder="$t('Token')" autocomplete="one-time-code" required>
 
                 <div class="flex justify-center mt-3 mb-3">
                     <div class="form-check">

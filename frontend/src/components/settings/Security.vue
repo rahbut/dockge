@@ -33,7 +33,7 @@
                             v-model="password.newPassword"
                             type="password"
                             class="form-control"
-                            autocomplete="new-password"
+                            autocomplete="off"
                             required
                         />
                     </div>
@@ -48,10 +48,10 @@
                             type="password"
                             class="form-control"
                             :class="{ 'is-invalid': invalidPassword }"
-                            autocomplete="new-password"
+                            autocomplete="off"
                             required
                         />
-                        <div class="invalid-feedback">
+                        <div v-if="invalidPassword" class="invalid-feedback">
                             {{ $t("passwordNotMatchMsg") }}
                         </div>
                     </div>
@@ -131,6 +131,9 @@ export default {
 
     watch: {
         "password.repeatNewPassword"() {
+            this.invalidPassword = false;
+        },
+        "password.newPassword"() {
             this.invalidPassword = false;
         },
     },

@@ -1,4 +1,4 @@
-name: Node.js CI - Dockge
+name: Go CI - Dockge
 
 on:
   push:
@@ -14,24 +14,45 @@ jobs:
   ci:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
-      - name: Setup Node.js
+      # ── Go backend ──────────────────────────────────────────────────────
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.2'
+          cache: true
+
+      - name: Download Go modules
+        run: go mod download
+
+      - name: Vet
+        run: go vet ./backend/...
+
+      - name: Test
+        run: go test ./backend/... -race -timeout 120s
+
+      - name: Build backend
+        run: CGO_ENABLED=0 go build -o /dev/null ./backend/
+
+      # ── Frontend ────────────────────────────────────────────────────────
+      - name: Set up Node.js
         uses: actions/setup-node@v6
         with:
           node-version: 24
+          cache: npm
 
-      - name: Install dependencies
-        run: npm ci --ignore-scripts
+      - name: Install frontend dependencies
+        run: npm ci --ignore-scripts --no-fund
 
-      - name: Lint
+      - name: Lint frontend
         run: npm run lint
 
-      - name: Check Typescript
+      - name: Type-check frontend
         run: npm run check-ts
 
-      - name: Build
+      - name: Build frontend
         run: npm run build:frontend
-      # more things can be add later like tests etc..
-

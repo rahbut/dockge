@@ -1,0 +1,11 @@
+-- +goose Up
+CREATE TABLE IF NOT EXISTS agent (
+    id       INTEGER PRIMARY KEY AUTOINCREMENT,
+    url      VARCHAR(255) NOT NULL UNIQUE,
+    username VARCHAR(255) NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    active   BOOLEAN NOT NULL DEFAULT 1
+);
+
+-- +goose Down
+DROP TABLE IF EXISTS agent;

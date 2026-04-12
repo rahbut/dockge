@@ -222,8 +222,11 @@
                 </div>
             </div>
 
-            <div v-if="!stack.isManagedByDockge && !processing">
-                {{ $t("stackNotManagedByDockgeMsg") }}
+            <div v-if="!stack.isManagedByDockge && !processing" class="shadow-box p-4">
+                <p class="mb-3">{{ $t("stackNotManagedByDockgeMsg") }}</p>
+                <button class="btn btn-danger" :disabled="processing" @click="downStack">
+                    {{ $t("cleanupStack") }}
+                </button>
             </div>
 
             <!-- Delete Dialog -->
@@ -676,6 +679,9 @@ export default {
             this.$root.emitAgent(this.endpoint, "startStack", this.stack.name, (res) => {
                 this.processing = false;
                 this.$root.toastRes(res);
+                if (res.ok) {
+                    this.requestServiceStatus();
+                }
             });
         },
 
@@ -685,6 +691,9 @@ export default {
             this.$root.emitAgent(this.endpoint, "stopStack", this.stack.name, (res) => {
                 this.processing = false;
                 this.$root.toastRes(res);
+                if (res.ok) {
+                    this.requestServiceStatus();
+                }
             });
         },
 
@@ -694,6 +703,9 @@ export default {
             this.$root.emitAgent(this.endpoint, "downStack", this.stack.name, (res) => {
                 this.processing = false;
                 this.$root.toastRes(res);
+                if (res.ok) {
+                    this.requestServiceStatus();
+                }
             });
         },
 
@@ -703,6 +715,9 @@ export default {
             this.$root.emitAgent(this.endpoint, "restartStack", this.stack.name, (res) => {
                 this.processing = false;
                 this.$root.toastRes(res);
+                if (res.ok) {
+                    this.requestServiceStatus();
+                }
             });
         },
 
@@ -714,6 +729,7 @@ export default {
                 this.$root.toastRes(res);
                 if (res.ok) {
                     this.updateDetails = null;
+                    this.requestServiceStatus();
                 }
             });
         },
