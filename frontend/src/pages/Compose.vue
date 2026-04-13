@@ -16,6 +16,7 @@
                 :is-add="isAdd"
                 :active="active"
                 :processing="processing"
+                :update-available="globalStack?.updateAvailable"
                 @deploy="deployStack"
                 @save="saveStack"
                 @edit="isEditMode = true"
@@ -26,7 +27,6 @@
                 @down="downStack"
                 @discard="discardStack"
                 @delete="showDeleteDialog = true"
-                :update-available="globalStack?.updateAvailable"
             />
 
             <!-- URLs -->

@@ -63,6 +63,7 @@ const subMenus = computed((): Record<string, { title: string }> => ({
     general: { title: t("general") },
     security: { title: t("Security") },
     globalEnv: { title: t("GlobalEnv") },
+    maintenance: { title: t("Maintenance") },
     about: { title: t("About") },
 }));
 

@@ -240,31 +240,12 @@ func RegisterDockerHandlers(socket *sio.Socket, srv *Server) {
 			return
 		}
 		go func() {
-			stacks, err := stack.GetStackList(srv.StacksDir, false)
+			allResults, err := srv.RunUpdateCheck()
 			if err != nil {
 				if ack != nil {
 					ack(errResp(err.Error()))
 				}
 				return
-			}
-			allResults := make(map[string]any)
-			for name, st := range stacks {
-				if !st.IsManagedByDockge() {
-					continue
-				}
-				st.Load()
-				results, _ := st.CheckUpdates()
-				hasUpdate := false
-				for _, r := range results {
-					if r.UpdateAvailable {
-						hasUpdate = true
-						break
-					}
-				}
-				allResults[name] = map[string]any{
-					"updateAvailable": hasUpdate,
-					"services":        results,
-				}
 			}
 			if ack != nil {
 				ack(map[string]any{"ok": true, "allResults": allResults})

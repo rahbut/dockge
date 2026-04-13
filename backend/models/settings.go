@@ -116,3 +116,9 @@ func GetTrustProxy(ctx context.Context) (bool, error) {
 func GetPrimaryHostname(ctx context.Context) (string, error) {
 	return GetSetting(ctx, "primaryHostname")
 }
+
+// GetUpdateCheckTime returns the scheduled update check time as "HH:MM",
+// or "" if the feature is disabled.
+func GetUpdateCheckTime(ctx context.Context) (string, error) {
+	return GetSetting(ctx, "updateCheckTime")
+}

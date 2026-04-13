@@ -155,9 +155,15 @@ func run(cfg *Config) error {
 	mux := http.NewServeMux()
 	router.Register(mux, frontendDist, io.ServeHandler(nil))
 
-	// ── Cron: broadcast stack list every 10 s ─────────────────────────────
-	c := cron.New()
+	// ── Cron scheduler ────────────────────────────────────────────────────
+	c := cron.New(cron.WithSeconds()) // six-field spec: seconds minutes hours ...
 	c.AddFunc("@every 10s", srv.BroadcastStackList)
+	srv.Cron = c
+
+	// Register daily update-check job if configured.
+	updateCheckTime, _ := models.GetUpdateCheckTime(ctx)
+	srv.SetUpdateCheckSchedule(updateCheckTime)
+
 	c.Start()
 	defer c.Stop()
 

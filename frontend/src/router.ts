@@ -17,6 +17,7 @@ const General = () => import("./components/settings/General.vue");
 const Appearance = () => import("./components/settings/Appearance.vue");
 const Security = () => import("./components/settings/Security.vue");
 const GlobalEnv = () => import("./components/settings/GlobalEnv.vue");
+const Maintenance = () => import("./components/settings/Maintenance.vue");
 const About = () => import("./components/settings/About.vue");
 
 const routes = [
@@ -51,6 +52,7 @@ const routes = [
                             { path: "appearance", component: Appearance },
                             { path: "security", component: Security },
                             { path: "globalEnv", component: GlobalEnv },
+                            { path: "maintenance", component: Maintenance },
                             { path: "about", component: About },
                         ],
                     },

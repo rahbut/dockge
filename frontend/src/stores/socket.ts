@@ -221,6 +221,26 @@ export const useSocketStore = defineStore("socket", () => {
             terminalMap.get(terminalName)?.write(data);
         });
 
+        // Scheduled update check results — merge updateAvailable into stackList
+        // so nav badges update for all connected clients without manual refresh.
+        agentSocket.on("updateCheckResults", (...args: unknown[]) => {
+            const res = args[0] as SocketResponse & { allResults?: Record<string, { updateAvailable: boolean }> };
+            if (res.ok && res.allResults) {
+                for (const name in res.allResults) {
+                    const storeKey = name + "_";
+                    if (stackList.value[storeKey]) {
+                        stackList.value[storeKey].updateAvailable = res.allResults[name].updateAvailable;
+                    }
+                    for (const endpoint in allAgentStackList.value) {
+                        const agentStack = allAgentStackList.value[endpoint].stackList[name];
+                        if (agentStack) {
+                            agentStack.updateAvailable = res.allResults[name].updateAvailable;
+                        }
+                    }
+                }
+            }
+        });
+
         agentSocket.on("stackList", (...args: unknown[]) => {
             const res = args[0] as SocketResponse & { endpoint?: string; stackList?: Record<string, Stack> };
             if (res.ok) {

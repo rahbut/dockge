@@ -111,6 +111,11 @@ func RegisterSettingsHandlers(socket *sio.Socket, srv *Server) {
 				os.WriteFile(globalEnvPath, []byte(globalEnvVal), 0o644)
 			}
 		}
+		// If updateCheckTime changed, reconfigure the cron job live.
+		if v, ok := data["updateCheckTime"].(string); ok {
+			srv.SetUpdateCheckSchedule(v)
+		}
+
 		if ack != nil {
 			ack(map[string]any{"ok": true, "msg": "Saved", "msgi18n": true})
 		}
