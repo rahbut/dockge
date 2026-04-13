@@ -8,14 +8,12 @@
                 </div>
                 <div v-if="!isEditMode" class="flex flex-wrap gap-1">
                     <span class="badge" :class="bgStyle">{{ status }}</span>
-
-                    <span v-if="updateStatus && updateStatus.updateAvailable" class="badge bg-warning" :title="$t('updateAvailable')">
-                        <ArrowUpCircleIcon :size="12" class="mr-1 inline" />{{ $t('updateAvailable') }}
+                    <span v-if="updateStatus?.updateAvailable" class="badge bg-warning" :title="$t('updateAvailable')">
+                        <ArrowUpCircleIcon :size="12" class="mr-1 inline" />{{ $t("updateAvailable") }}
                     </span>
-                    <span v-else-if="updateStatus && updateStatus.error === 'registryError'" class="badge bg-secondary" :title="updateStatus.error">
+                    <span v-else-if="updateStatus?.error === 'registryError'" class="badge bg-secondary" :title="updateStatus.error">
                         {{ $t(updateStatus.error) || updateStatus.error }}
                     </span>
-
                     <a v-for="port in (ports ?? envsubstService.ports)" :key="port" :href="parsePort(port).url" target="_blank">
                         <span class="badge bg-secondary">{{ parsePort(port).display }}</span>
                     </a>
@@ -41,45 +39,25 @@
             <div v-if="isEditMode && showConfig" class="config mt-3">
                 <!-- Image -->
                 <div class="mb-4">
-                    <label class="form-label">
-                        {{ $t("dockerImage") }}
-                    </label>
+                    <label class="form-label">{{ $t("dockerImage") }}</label>
                     <div class="input-group mb-3">
-                        <input
-                            v-model="service.image"
-                            class="form-control"
-                            list="image-datalist"
-                        />
+                        <input v-model="service.image" class="form-control" list="image-datalist" />
                     </div>
-
-                    <!-- TODO: Search online: https://hub.docker.com/api/content/v1/products/search?q=louislam%2Fuptime&source=community&page=1&page_size=4 -->
-                    <datalist id="image-datalist">
-                        <option value="louislam/uptime-kuma:1" />
-                    </datalist>
-                    <div class="form-text"></div>
+                    <datalist id="image-datalist"><option value="louislam/uptime-kuma:1" /></datalist>
                 </div>
-
                 <!-- Ports -->
                 <div class="mb-4">
-                    <label class="form-label">
-                        {{ $t("port", 2) }}
-                    </label>
-                    <ArrayInput name="ports" :display-name="$t('port')" placeholder="HOST:CONTAINER" />
+                    <label class="form-label">{{ $t("port", 2) }}</label>
+                    <ArrayInput name="ports" :display-name="$t('port')" placeholder="HOST:CONTAINER" :target="service" />
                 </div>
-
                 <!-- Volumes -->
                 <div class="mb-4">
-                    <label class="form-label">
-                        {{ $t("volume", 2) }}
-                    </label>
-                    <ArrayInput name="volumes" :display-name="$t('volume')" placeholder="HOST:CONTAINER" />
+                    <label class="form-label">{{ $t("volume", 2) }}</label>
+                    <ArrayInput name="volumes" :display-name="$t('volume')" placeholder="HOST:CONTAINER" :target="service" />
                 </div>
-
                 <!-- Restart Policy -->
                 <div class="mb-4">
-                    <label class="form-label">
-                        {{ $t("restartPolicy") }}
-                    </label>
+                    <label class="form-label">{{ $t("restartPolicy") }}</label>
                     <select v-model="service.restart" class="form-select">
                         <option value="always">{{ $t("restartPolicyAlways") }}</option>
                         <option value="unless-stopped">{{ $t("restartPolicyUnlessStopped") }}</option>
@@ -87,202 +65,112 @@
                         <option value="no">{{ $t("restartPolicyNo") }}</option>
                     </select>
                 </div>
-
                 <!-- Environment Variables -->
                 <div class="mb-4">
-                    <label class="form-label">
-                        {{ $t("environmentVariable", 2) }}
-                    </label>
-                    <ArrayInput name="environment" :display-name="$t('environmentVariable')" placeholder="KEY=VALUE" />
+                    <label class="form-label">{{ $t("environmentVariable", 2) }}</label>
+                    <ArrayInput name="environment" :display-name="$t('environmentVariable')" placeholder="KEY=VALUE" :target="service" />
                 </div>
-
-                <!-- Network -->
+                <!-- Networks -->
                 <div class="mb-4">
-                    <label class="form-label">
-                        {{ $t("network", 2) }}
-                    </label>
-
+                    <label class="form-label">{{ $t("network", 2) }}</label>
                     <div v-if="networkList.length === 0 && service.networks && service.networks.length > 0" class="text-yellow-500 mb-3">
                         {{ $t("NoNetworksAvailable") }}
                     </div>
-
-                    <ArraySelect name="networks" :display-name="$t('network')" placeholder="Network Name" :options="networkList" />
+                    <ArraySelect name="networks" :display-name="$t('network')" placeholder="Network Name" :options="networkList" :target="service" />
                 </div>
-
                 <!-- Depends on -->
                 <div class="mb-4">
-                    <label class="form-label">
-                        {{ $t("dependsOn") }}
-                    </label>
-                    <ArrayInput name="depends_on" :display-name="$t('dependsOn')" :placeholder="$t(`containerName`)" />
+                    <label class="form-label">{{ $t("dependsOn") }}</label>
+                    <ArrayInput name="depends_on" :display-name="$t('dependsOn')" :placeholder="$t('containerName')" :target="service" />
                 </div>
             </div>
         </transition>
     </div>
 </template>
 
-<script>
-import { defineComponent } from "vue";
-import { parseDockerPort } from "../../../common/util-common";
+<script setup lang="ts">
+import { ref, computed } from "vue";
 import { ArrowUpCircleIcon, TerminalIcon, PencilIcon, Trash2Icon } from "lucide-vue-next";
+import { parseDockerPort } from "../utils";
+import { useSocketStore } from "../stores/socket";
 import ArrayInput from "./ArrayInput.vue";
 import ArraySelect from "./ArraySelect.vue";
+import type { ComposeConfig, Service, UpdateStatus } from "../types";
 
-export default defineComponent({
-    components: {
-        ArrowUpCircleIcon,
-        TerminalIcon,
-        PencilIcon,
-        Trash2Icon,
-        ArrayInput,
-        ArraySelect,
-    },
-    props: {
-        name: {
-            type: String,
-            required: true,
-        },
-        isEditMode: {
-            type: Boolean,
-            default: false,
-        },
-        first: {
-            type: Boolean,
-            default: false,
-        },
-        status: {
-            type: String,
-            default: "N/A",
-        },
-        ports: {
-            type: Array,
-            default: null
-        },
-        updateStatus: {
-            type: Object,
-            default: null
-        }
-    },
-    emits: [
-    ],
-    data() {
-        return {
-            showConfig: false,
-        };
-    },
-    computed: {
+const props = defineProps<{
+    name: string;
+    isEditMode?: boolean;
+    first?: boolean;
+    status?: string;
+    ports?: string[] | null;
+    updateStatus?: UpdateStatus & { error?: string };
+    /** Passed down from Compose.vue — replaces $parent.$parent */
+    jsonConfig: ComposeConfig;
+    envsubstJSONConfig?: ComposeConfig;
+    endpoint: string;
+    stackName: string;
+    primaryHostname?: string;
+}>();
 
-        networkList() {
-            let list = [];
-            for (const networkName in this.jsonObject.networks) {
-                list.push(networkName);
-            }
-            return list;
-        },
+const socketStore = useSocketStore();
+const showConfig = ref(false);
 
-        bgStyle() {
-            if (this.status === "running" || this.status === "healthy") {
-                return "bg-primary";
-            } else if (this.status === "unhealthy") {
-                return "bg-danger";
-            } else {
-                return "bg-secondary";
-            }
-        },
+const service = computed((): Service => props.jsonConfig?.services?.[props.name] ?? {});
+const envsubstService = computed((): Service => props.envsubstJSONConfig?.services?.[props.name] ?? {});
 
-        terminalRouteLink() {
-            if (this.endpoint) {
-                return {
-                    name: "containerTerminalEndpoint",
-                    params: {
-                        endpoint: this.endpoint,
-                        stackName: this.stackName,
-                        serviceName: this.name,
-                        type: "bash",
-                    },
-                };
-            } else {
-                return {
-                    name: "containerTerminal",
-                    params: {
-                        stackName: this.stackName,
-                        serviceName: this.name,
-                        type: "bash",
-                    },
-                };
-            }
-        },
+const networkList = computed(() => Object.keys(props.jsonConfig?.networks ?? {}));
 
-        endpoint() {
-            return this.$parent.$parent.endpoint;
-        },
-
-        stack() {
-            return this.$parent.$parent.stack;
-        },
-
-        stackName() {
-            return this.$parent.$parent.stack.name;
-        },
-
-        service() {
-            if (!this.jsonObject.services[this.name]) {
-                return {};
-            }
-            return this.jsonObject.services[this.name];
-        },
-
-        jsonObject() {
-            return this.$parent.$parent.jsonConfig;
-        },
-
-        envsubstJSONConfig() {
-            return this.$parent.$parent.envsubstJSONConfig;
-        },
-
-        envsubstService() {
-            if (!this.envsubstJSONConfig.services[this.name]) {
-                return {};
-            }
-            return this.envsubstJSONConfig.services[this.name];
-        },
-
-        imageName() {
-            if (this.envsubstService.image) {
-                return this.envsubstService.image.split(":")[0];
-            } else {
-                return "";
-            }
-        },
-
-        imageTag() {
-            if (this.envsubstService.image) {
-                let tag = this.envsubstService.image.split(":")[1];
-
-                if (tag) {
-                    return tag;
-                } else {
-                    return "latest";
-                }
-            } else {
-                return "";
-            }
-        },
-    },
-    methods: {
-        parsePort(port) {
-            if (this.stack.endpoint) {
-                return parseDockerPort(port, this.stack.primaryHostname);
-            } else {
-                let hostname = this.$root.info.primaryHostname || location.hostname;
-                return parseDockerPort(port, hostname);
-            }
-        },
-        remove() {
-            delete this.jsonObject.services[this.name];
-        },
+const bgStyle = computed(() => {
+    if (props.status === "running" || props.status === "healthy") {
+        return "bg-primary";
     }
+    if (props.status === "unhealthy") {
+        return "bg-danger";
+    }
+    return "bg-secondary";
 });
+
+const imageName = computed(() => (envsubstService.value.image ?? "").split(":")[0]);
+const imageTag = computed(() => {
+    const tag = (envsubstService.value.image ?? "").split(":")[1];
+    return tag ?? "latest";
+});
+
+const terminalRouteLink = computed(() => {
+    if (props.endpoint) {
+        return {
+            name: "containerTerminalEndpoint",
+            params: {
+                endpoint: props.endpoint,
+                stackName: props.stackName,
+                serviceName: props.name,
+                type: "bash",
+            },
+        };
+    }
+    return {
+        name: "containerTerminal",
+        params: {
+            stackName: props.stackName,
+            serviceName: props.name,
+            type: "bash",
+        },
+    };
+});
+
+function parsePort(port: string) {
+    const hostname = props.primaryHostname
+        || (socketStore.info as Record<string, string>).primaryHostname
+        || location.hostname;
+    return parseDockerPort(port, hostname as string);
+}
+
+function remove() {
+    if (props.jsonConfig.services) {
+        // eslint-disable-next-line vue/no-mutating-props
+        delete props.jsonConfig.services[props.name];
+    }
+}
 </script>
 
 <style scoped>

@@ -4,125 +4,68 @@
             <ul v-if="isArrayInited" class="list-group">
                 <li v-for="(value, index) in array" :key="index" class="list-group-item">
                     <input v-model="array[index]" type="text" class="no-bg domain-input" :placeholder="placeholder" />
-                    <XIcon :size="14" class="action remove ml-2 mr-3 text-red-500" @click="remove(index)" />
+                    <XIcon :size="14" class="action remove ml-2 mr-3 text-red-500" @click="remove(index as number)" />
                 </li>
             </ul>
-
             <button class="btn btn-normal btn-sm mt-3" @click="addField">{{ $t("addListItem", [ displayName ]) }}</button>
         </div>
-        <div v-else>
-            {{ $t("LongSyntaxNotSupported") }}
-        </div>
+        <div v-else>{{ $t("LongSyntaxNotSupported") }}</div>
     </div>
 </template>
 
-<script>
+<script setup lang="ts">
+import { computed } from "vue";
 import { XIcon } from "lucide-vue-next";
+import type { ComposeConfig, Service } from "../types";
 
-export default {
-    components: { XIcon },
-    props: {
-        name: {
-            type: String,
-            required: true,
-        },
-        placeholder: {
-            type: String,
-            default: "",
-        },
-        displayName: {
-            type: String,
-            required: true,
-        },
-        objectType: {
-            type: String,
-            default: "service",
-        }
-    },
-    data() {
-        return {
+const props = defineProps<{
+    name: string;
+    displayName: string;
+    placeholder?: string;
+    /** The object that owns the array (service or x-dockge config) */
+    target: Service | Record<string, unknown>;
+    /** For x-dockge type, pass the full jsonConfig so we can initialise it */
+    jsonConfig?: ComposeConfig;
+    objectType?: string;
+}>();
 
-        };
-    },
-    computed: {
-        array() {
-            // Create the array if not exists, it should be safe.
-            if (!this.service[this.name]) {
-                return [];
-            }
-            return this.service[this.name];
-        },
-
-        /**
-         * Check if the array is inited before called v-for.
-         * Prevent empty arrays inserted to the YAML file.
-         * @return {boolean}
-         */
-        isArrayInited() {
-            return this.service[this.name] !== undefined;
-        },
-
-        /**
-         * Not a good name, but it is used to get the object.
-         */
-        service() {
-            if (this.objectType === "service") {
-                // Used in Container.vue
-                return this.$parent.$parent.service;
-            } else if (this.objectType === "x-dockge") {
-
-                if (!this.$parent.$parent.jsonConfig["x-dockge"]) {
-                    return {};
-                }
-
-                // Used in Compose.vue
-                return this.$parent.$parent.jsonConfig["x-dockge"];
-            } else {
-                return {};
-            }
-        },
-
-        valid() {
-            // Check if the array is actually an array
-            if (!Array.isArray(this.array)) {
-                return false;
-            }
-
-            // Check if the array contains non-object only.
-            for (let item of this.array) {
-                if (typeof item === "object") {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-    },
-    created() {
-
-    },
-    methods: {
-        addField() {
-
-            // Create the object if not exists.
-            if (this.objectType === "x-dockge") {
-                if (!this.$parent.$parent.jsonConfig["x-dockge"]) {
-                    this.$parent.$parent.jsonConfig["x-dockge"] = {};
-                }
-            }
-
-            // Create the array if not exists.
-            if (!this.service[this.name]) {
-                this.service[this.name] = [];
-            }
-
-            this.array.push("");
-        },
-        remove(index) {
-            this.array.splice(index, 1);
-        },
+const array = computed(() => {
+    const val = (props.target as Record<string, unknown>)[props.name];
+    if (!val) {
+        return [];
     }
-};
+    return val as string[];
+});
+
+const isArrayInited = computed(() => (props.target as Record<string, unknown>)[props.name] !== undefined);
+
+const valid = computed(() => {
+    if (!Array.isArray(array.value)) {
+        return false;
+    }
+    for (const item of array.value) {
+        if (typeof item === "object") {
+            return false;
+        }
+    }
+    return true;
+});
+
+function addField() {
+    const target = props.target as Record<string, unknown>;
+    if (props.objectType === "x-dockge" && props.jsonConfig && !props.jsonConfig["x-dockge"]) {
+        // eslint-disable-next-line vue/no-mutating-props
+        props.jsonConfig["x-dockge"] = {};
+    }
+    if (!target[props.name]) {
+        target[props.name] = [];
+    }
+    (target[props.name] as string[]).push("");
+}
+
+function remove(index: number) {
+    array.value.splice(index, 1);
+}
 </script>
 
 <style scoped>

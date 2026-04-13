@@ -2,13 +2,9 @@
     <div>
         <div class="my-4">
             <label for="language" class="form-label">{{ $t("Language") }}</label>
-            <select id="language" v-model="$root.language" class="form-select">
-                <option
-                    v-for="(lang, i) in $i18n.availableLocales"
-                    :key="`Lang${i}`"
-                    :value="lang"
-                >
-                    {{ $i18n.messages[lang].languageName }}
+            <select id="language" v-model="langStore.language" class="form-select">
+                <option v-for="(lang, i) in availableLocales" :key="`Lang${i}`" :value="lang">
+                    {{ localeLabel(lang) }}
                 </option>
             </select>
         </div>
@@ -20,8 +16,8 @@
                     v-for="opt in themeOptions"
                     :key="opt.value"
                     class="btn btn-outline-primary"
-                    :class="{ 'active': $root.userTheme === opt.value }"
-                    @click="$root.userTheme = opt.value"
+                    :class="{ active: themeStore.userTheme === opt.value }"
+                    @click="themeStore.userTheme = opt.value"
                 >
                     {{ $t(opt.label) }}
                 </button>
@@ -30,16 +26,18 @@
     </div>
 </template>
 
-<script>
-export default {
-    data() {
-        return {
-            themeOptions: [
-                { value: "light", label: "Light" },
-                { value: "dark", label: "Dark" },
-                { value: "auto", label: "Auto" },
-            ],
-        };
-    },
-};
+<script setup lang="ts">
+import { useThemeStore } from "../../stores/theme";
+import { useLangStore } from "../../stores/lang";
+import { useLocales } from "../../composables/useLocales";
+
+const themeStore = useThemeStore();
+const langStore = useLangStore();
+const { availableLocales, localeLabel } = useLocales();
+
+const themeOptions = [
+    { value: "light", label: "Light" },
+    { value: "dark", label: "Dark" },
+    { value: "auto", label: "Auto" },
+];
 </script>

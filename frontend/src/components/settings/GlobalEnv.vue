@@ -1,95 +1,54 @@
 <template>
     <div>
-        <div v-if="settingsLoaded" class="my-4">
-            <form class="my-4" autocomplete="off" @submit.prevent="saveGeneral">
+        <div v-if="settingsStore.settingsLoaded" class="my-4">
+            <form class="my-4" autocomplete="off" @submit.prevent="settingsStore.saveSettings()">
                 <div class="shadow-box mb-3 editor-box edit-mode">
                     <code-mirror
                         ref="editor"
-                        v-model="settings.globalENV"
+                        v-model="(settingsStore.settings.globalENV as string)"
                         :extensions="extensionsEnv"
                         minimal
-                        wrap="true"
-                        :dark="$root.isDark"
-                        tab="true"
+                        :wrap="true"
+                        :dark="themeStore.isDark"
+                        :tab="true"
                         :hasFocus="editorFocus"
-                        @change="onChange"
                     />
                 </div>
-
                 <div class="my-4">
-                    <!-- Save Button -->
-                    <div>
-                        <button class="btn btn-primary" type="submit">
-                            {{ $t("Save") }}
-                        </button>
-                    </div>
+                    <button class="btn btn-primary" type="submit">{{ $t("Save") }}</button>
                 </div>
             </form>
         </div>
     </div>
 </template>
 
-<script>
+<script setup lang="ts">
+import { ref, computed } from "vue";
 import CodeMirror from "vue-codemirror6";
-import { python } from "@codemirror/lang-python"; // good enough for .env key=value highlighting
+import { python } from "@codemirror/lang-python";
 import { dracula, solarizedLight } from "thememirror";
 import { lineNumbers, EditorView } from "@codemirror/view";
-import { ref } from "vue";
+import { useSettingsStore } from "../../stores/settings";
+import { useThemeStore } from "../../stores/theme";
 
-export default {
-    name: "GlobalEnv",
-    components: {
-        CodeMirror,
-    },
+const settingsStore = useSettingsStore();
+const themeStore = useThemeStore();
 
-    setup() {
-        const editorFocus = ref(false);
+const editorFocus = ref(false);
 
-        const focusEffectHandler = (state, focusing) => {
-            editorFocus.value = focusing;
-            return null;
-        };
-
-        return { editorFocus,
-            focusEffectHandler };
-    },
-
-    computed: {
-        editorTheme() {
-            return this.$root.isDark ? dracula : solarizedLight;
-        },
-
-        extensionsEnv() {
-            return [
-                this.editorTheme,
-                python(),
-                lineNumbers(),
-                EditorView.focusChangeEffect.of(this.focusEffectHandler),
-            ];
-        },
-
-        settings() {
-            return this.$parent.$parent.$parent.settings;
-        },
-        saveSettings() {
-            return this.$parent.$parent.$parent.saveSettings;
-        },
-        settingsLoaded() {
-            return this.$parent.$parent.$parent.settingsLoaded;
-        },
-    },
-
-    methods: {
-        /** Save the settings */
-        saveGeneral() {
-            this.saveSettings();
-        },
-
-        onChange() {
-            // hook for future live validation if desired
-        },
-    },
+const focusEffectHandler = (_state: unknown, focusing: boolean) => {
+    editorFocus.value = focusing;
+    return null;
 };
+
+const editorTheme = computed(() => themeStore.isDark ? dracula : solarizedLight);
+
+const extensionsEnv = computed(() => [
+    editorTheme.value,
+    python(),
+    lineNumbers(),
+    EditorView.focusChangeEffect.of(focusEffectHandler),
+]);
 </script>
 
 <style scoped>

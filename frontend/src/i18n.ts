@@ -36,28 +36,33 @@ const languageList = {
     "mai": "मैथिली",
 };
 
-let messages = {
-    en,
-};
+// vue-i18n's createI18n types require 'any' for the messages map when using
+// dynamic locale loading with mixed message shapes.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const messages: Record<string, any> = { en };
 
-for (let lang in languageList) {
+for (const lang in languageList) {
     messages[lang] = {
-        languageName: languageList[lang]
+        languageName: (languageList as Record<string, string>)[lang],
     };
 }
 
 const rtlLangs = [ "fa", "ar-SY", "ur", "ar" ];
 
-export const currentLocale = () => localStorage.locale
-    || languageList[navigator.language] && navigator.language
-    || languageList[navigator.language.substring(0, 2)] && navigator.language.substring(0, 2)
-    || "en";
+export const currentLocale = () => {
+    const ll = languageList as Record<string, string>;
+    return localStorage.getItem("locale")
+        || (ll[navigator.language] && navigator.language)
+        || (ll[navigator.language.substring(0, 2)] && navigator.language.substring(0, 2))
+        || "en";
+};
 
 export const localeDirection = () => {
     return rtlLangs.includes(currentLocale()) ? "rtl" : "ltr";
 };
 
 export const i18n = createI18n({
+    legacy: false,
     locale: currentLocale(),
     fallbackLocale: "en",
     silentFallbackWarn: true,

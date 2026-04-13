@@ -11,50 +11,34 @@
             :required="required"
             :readonly="readonly"
         >
-
-        <a v-if="visibility == 'password'" class="btn btn-outline-primary" @click="showInput()">
+        <a v-if="visibility === 'password'" class="btn btn-outline-primary" @click="visibility = 'text'">
             <EyeIcon :size="16" />
         </a>
-        <a v-if="visibility == 'text'" class="btn btn-outline-primary" @click="hideInput()">
+        <a v-if="visibility === 'text'" class="btn btn-outline-primary" @click="visibility = 'password'">
             <EyeOffIcon :size="16" />
         </a>
     </div>
 </template>
 
-<script>
+<script setup lang="ts">
+import { ref, computed } from "vue";
 import { EyeIcon, EyeOffIcon } from "lucide-vue-next";
 
-export default {
-    components: { EyeIcon, EyeOffIcon },
-    props: {
-        modelValue: { type: String, default: "" },
-        placeholder: { type: String, default: "" },
-        maxlength: { type: Number, default: 255 },
-        autocomplete: { type: String, default: "new-password" },
-        required: { type: Boolean },
-        readonly: { type: String, default: undefined },
-    },
-    emits: [ "update:modelValue" ],
-    data() {
-        return { visibility: "password" };
-    },
-    computed: {
-        model: {
-            get() {
-                return this.modelValue;
-            },
-            set(value) {
-                this.$emit("update:modelValue", value);
-            }
-        }
-    },
-    methods: {
-        showInput() {
-            this.visibility = "text";
-        },
-        hideInput() {
-            this.visibility = "password";
-        },
-    }
-};
+const props = defineProps<{
+    modelValue?: string;
+    placeholder?: string;
+    maxlength?: number;
+    autocomplete?: string;
+    required?: boolean;
+    readonly?: boolean;
+}>();
+
+const emit = defineEmits<{ (e: "update:modelValue", v: string): void }>();
+
+const visibility = ref<"password" | "text">("password");
+
+const model = computed({
+    get: () => props.modelValue ?? "",
+    set: (v) => emit("update:modelValue", v),
+});
 </script>

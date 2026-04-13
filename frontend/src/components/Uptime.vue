@@ -2,11 +2,21 @@
     <span :class="className">{{ statusName }}</span>
 </template>
 
-<script>
-import { statusColor, statusNameShort } from "../../../common/util-common";
+<script setup lang="ts">
+import { computed } from "vue";
+import { useI18n } from "vue-i18n";
+import { statusColor, statusNameShort } from "../utils";
 
-// Explicit class map — Tailwind needs complete class names at build time
-const colorClassMap = {
+import type { Stack } from "../types";
+
+const props = defineProps<{
+    stack: Stack;
+    fixedWidth?: boolean;
+}>();
+
+const { t } = useI18n();
+
+const colorClassMap: Record<string, string> = {
     primary: "badge rounded-pill bg-primary",
     secondary: "badge rounded-pill bg-secondary",
     danger: "badge rounded-pill bg-danger",
@@ -14,33 +24,15 @@ const colorClassMap = {
     success: "badge rounded-pill bg-success",
 };
 
-export default {
-    props: {
-        stack: {
-            type: Object,
-            default: null,
-        },
-        fixedWidth: {
-            type: Boolean,
-            default: false,
-        },
-    },
-
-    computed: {
-        color() {
-            return statusColor(this.stack?.status);
-        },
-
-        statusName() {
-            return this.$t(statusNameShort(this.stack?.status));
-        },
-
-        className() {
-            const base = colorClassMap[this.color] ?? "badge rounded-pill bg-secondary";
-            return this.fixedWidth ? base + " fixed-width" : base;
-        },
-    },
-};
+const color = computed(() => statusColor(props.stack?.status ?? 0));
+const statusName = computed(() => {
+    const key = statusNameShort(props.stack?.status ?? 0);
+    return key && key !== "?" ? t(key) : "—";
+});
+const className = computed(() => {
+    const base = colorClassMap[color.value] ?? "badge rounded-pill bg-secondary";
+    return props.fixedWidth ? base + " fixed-width" : base;
+});
 </script>
 
 <style scoped>

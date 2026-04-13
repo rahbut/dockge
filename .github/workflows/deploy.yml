@@ -59,10 +59,18 @@ jobs:
             go_arch:      amd64
             docker_arch:  x86_64
             compose_arch: x86_64
+            oci_platform: linux/amd64
           - arch:         arm64
             go_arch:      arm64
             docker_arch:  aarch64
             compose_arch: aarch64
+            oci_platform: linux/arm64
+          - arch:         arm-v7
+            go_arch:      arm
+            go_arm:       "7"
+            docker_arch:  armhf
+            compose_arch: armv7
+            oci_platform: linux/arm/v7
 
     steps:
       - uses: actions/checkout@v6
@@ -78,6 +86,7 @@ jobs:
         run: |
           mkdir -p dist
           CGO_ENABLED=0 GOOS=linux GOARCH=${{ matrix.go_arch }} \
+            ${{ matrix.go_arm && format('GOARM={0}', matrix.go_arm) || '' }} \
             go build \
               -ldflags="-s -w -X main.Version=$(cat backend/version.txt 2>/dev/null || echo dev)" \
               -trimpath \
@@ -135,7 +144,13 @@ jobs:
       packages: write
     strategy:
       matrix:
-        arch: [amd64, arm64]
+        include:
+          - arch: amd64
+            oci_platform: linux/amd64
+          - arch: arm64
+            oci_platform: linux/arm64
+          - arch: arm-v7
+            oci_platform: linux/arm/v7
 
     steps:
       - uses: actions/checkout@v6
@@ -170,7 +185,7 @@ jobs:
           # No platform emulation needed — the Dockerfile has no RUN instructions
           # that execute native code. BuildKit only needs to know the target OCI
           # platform label to embed in the manifest.
-          platforms: linux/${{ matrix.arch }}
+          platforms: ${{ matrix.oci_platform }}
           target: release
           push: true
           tags: ${{ env.IMAGE_NAME }}:latest-${{ matrix.arch }}
@@ -196,7 +211,8 @@ jobs:
           docker buildx imagetools create \
             -t ${{ env.IMAGE_NAME }}:latest \
             ${{ env.IMAGE_NAME }}:latest-amd64 \
-            ${{ env.IMAGE_NAME }}:latest-arm64
+            ${{ env.IMAGE_NAME }}:latest-arm64 \
+            ${{ env.IMAGE_NAME }}:latest-arm-v7
 
       - name: Report compressed image sizes
         run: |
@@ -205,6 +221,8 @@ jobs:
           echo ""                     >> $GITHUB_STEP_SUMMARY
           echo "| Platform | Compressed Size |" >> $GITHUB_STEP_SUMMARY
           echo "|----------|----------------|"  >> $GITHUB_STEP_SUMMARY
+
+          # amd64 and arm64 — matched by architecture field alone
           for arch in amd64 arm64; do
             raw=$(echo "$manifest" | jq --arg arch "$arch" \
               '[.manifests[] | select(.platform.architecture == $arch)] | .[0].size // empty')
@@ -215,3 +233,13 @@ jobs:
             fi
             echo "| linux/$arch | $size |" >> $GITHUB_STEP_SUMMARY
           done
+
+          # arm/v7 — must match on both architecture and variant
+          raw=$(echo "$manifest" | jq \
+            '[.manifests[] | select(.platform.architecture == "arm" and .platform.variant == "v7")] | .[0].size // empty')
+          if [ -n "$raw" ]; then
+            size=$(echo "$raw" | numfmt --to=iec-i --suffix=B)
+          else
+            size="N/A"
+          fi
+          echo "| linux/arm/v7 | $size |" >> $GITHUB_STEP_SUMMARY

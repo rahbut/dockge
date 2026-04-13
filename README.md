@@ -6,6 +6,8 @@
 
 A fancy, easy-to-use and reactive self-hosted docker compose.yaml stack-oriented manager.
 
+> **This is a fork of [louislam/dockge](https://github.com/louislam/dockge).** The backend has been rewritten in Go (no Node.js runtime required) and the frontend has been fully modernised — Pinia state management, Vue Composition API throughout, strict TypeScript, and a responsive layout that works on narrow screens. See [What's different](#this-fork) for details.
+
 [![GitHub Repo stars](https://img.shields.io/github/stars/rahbut/dockge?logo=github&style=flat)](https://github.com/rahbut/dockge) [![GitHub last commit (branch)](https://img.shields.io/github/last-commit/rahbut/dockge/main?logo=github)](https://github.com/rahbut/dockge/commits/main/)
 
 <img src="https://github.com/louislam/dockge/assets/1336778/26a583e1-ecb1-4a8d-aedf-76157d714ad7" width="900" alt="" />
@@ -30,6 +32,30 @@ View Video: https://youtu.be/AWAlOQeNpgU?t=48
 
 ![](https://github.com/louislam/dockge/assets/1336778/89fc1023-b069-42c0-a01c-918c495f1a6a)
 
+## What's different
+
+This repository is a fork of [louislam/dockge](https://github.com/louislam/dockge) with a significantly reworked frontend and a rewritten backend in Go.
+
+**Frontend changes:**
+- Migrated from Vue 3 Options API to Composition API (`<script setup>`) throughout
+- Replaced ad-hoc `$root`/`$parent` state with [Pinia](https://pinia.vuejs.org/) stores
+- Responsive layout — collapsible sidebar, slide-over drawer on narrow screens, tabbed Compose detail pane on mobile
+- Full TypeScript strict mode with `vue-tsc` — zero type errors
+- ESLint clean — passes the upstream CI lint check without modifications
+
+**Backend changes:**
+- Original Node.js/TypeScript backend replaced with a Go binary
+- Single self-contained executable — no Node.js runtime required at deployment
+- Faster startup, lower memory footprint, simpler distribution
+
+**Image:**
+- Upstream is built on the Node.js 22 runtime image (~720 MB uncompressed)
+- This fork uses `gcr.io/distroless/base-debian12` as the base — containing only glibc, CA certificates, and tzdata; no shell, no package manager, no Node.js runtime
+- Significantly smaller image with a substantially reduced attack surface
+
+**Architecture:**
+- Supported: `linux/amd64`, `linux/arm64`, `linux/arm/v7`
+
 ## 🔧 How to Install
 
 Requirements:
@@ -44,8 +70,8 @@ Requirements:
      - ✅ Fedora
      - ✅ ArchLinux
   - ❌ Debian/Raspbian Buster or lower is not supported
-  - ❌ Windows (Will be supported later)
-- Arch: arm64, amd64 (a.k.a x86_64)
+  - ❌ Windows is not supported
+- Arch: `amd64` (x86_64), `arm64`, `arm/v7` (32-bit)
 
 ### Basic
 
@@ -107,9 +133,6 @@ https://github.com/rahbut/dockge/discussions
 ### Translation
 If you want to translate Dockge into your language, please read [Translation Guide](https://github.com/rahbut/dockge/blob/main/frontend/src/lang/README.md)
 
-### Create a Pull Request
-
-Be sure to read the [guide](https://github.com/rahbut/dockge/blob/main/CONTRIBUTING.md), as we don't accept all types of pull requests and don't want to waste your time.
 
 ## FAQ
 

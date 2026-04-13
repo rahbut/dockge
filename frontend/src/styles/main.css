@@ -336,6 +336,23 @@ h2 { font-size: 26px; }
     .dark .nav-pills .nav-link.active,
     .dark .nav-pills .nav-link.router-link-exact-active { color: var(--color-dark-font2); }
 
+    /* --- Collapsible sidebar panel --- */
+    .sidebar-panel {
+        width: 18rem;        /* xl:w-72 equivalent */
+        min-width: 18rem;
+        overflow: hidden;
+        transition: width 0.25s var(--ease-in-out), min-width 0.25s var(--ease-in-out), opacity 0.2s ease;
+        opacity: 1;
+    }
+    .sidebar-panel.sidebar-collapsed {
+        width: 0;
+        min-width: 0;
+        opacity: 0;
+    }
+    .sidebar-inner {
+        width: 18rem;        /* fixed — doesn't shrink when parent animates */
+    }
+
     /* --- Stack list sidebar item --- */
     .stack-list.scrollbar { overflow-y: auto; }
     @media (max-width: 770px) {
@@ -368,6 +385,109 @@ h2 { font-size: 26px; }
     .editor-box.edit-mode { background-color: #eee8d5; }
     .dark .editor-box { background-color: #282a36 !important; }
     .dark .editor-box.edit-mode { background-color: #2c2f38 !important; }
+
+    /* --- Mobile / narrow header --- */
+    .mobile-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.625rem 1rem;
+        border-bottom: 1px solid #e5e7eb;
+        background-color: white;
+        position: sticky;
+        top: 0;
+        z-index: 30;
+    }
+    .dark .mobile-header {
+        background-color: var(--color-dark-header);
+        border-bottom-color: var(--color-dark-border);
+    }
+    .mobile-header-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.375rem;
+        border-radius: 0.375rem;
+        color: #6b7280;
+        cursor: pointer;
+        transition: background-color 0.15s, color 0.15s;
+    }
+    .mobile-header-btn:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+        color: #111827;
+    }
+    .dark .mobile-header-btn { color: var(--color-dark-font); }
+    .dark .mobile-header-btn:hover { background-color: rgba(255, 255, 255, 0.07); color: white; }
+
+    /* --- Drawer nav links --- */
+    .drawer-nav-link {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 0.75rem;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        text-decoration: none;
+        color: #374151;
+        margin-bottom: 2px;
+        transition: background-color 0.15s, color 0.15s;
+        cursor: pointer;
+    }
+    .drawer-nav-link:hover { background-color: rgba(0, 0, 0, 0.04); }
+    .dark .drawer-nav-link { color: var(--color-dark-font); }
+    .dark .drawer-nav-link:hover { background-color: rgba(255, 255, 255, 0.06); }
+    .drawer-nav-link.router-link-exact-active,
+    .drawer-nav-link.active {
+        background: linear-gradient(135deg, #cdf8f4, #d4f5e0);
+        color: #0d1f1e;
+    }
+    .dark .drawer-nav-link.router-link-exact-active,
+    .dark .drawer-nav-link.active {
+        background: linear-gradient(135deg, #1a3a38, #1a3028);
+        color: #cdf8f4;
+    }
+
+    /* --- Compose tab strip (narrow screens) --- */
+    .compose-tabs {
+        display: flex;
+        border-bottom: 2px solid #e5e7eb;
+        gap: 0;
+    }
+    .dark .compose-tabs { border-bottom-color: var(--color-dark-border); }
+
+    .compose-tab {
+        padding: 0.5rem 1.25rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #6b7280;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -2px;
+        cursor: pointer;
+        transition: color 0.15s, border-color 0.15s;
+    }
+    .compose-tab:hover { color: #111827; }
+    .dark .compose-tab { color: var(--color-dark-font3); }
+    .dark .compose-tab:hover { color: var(--color-dark-font); }
+    .compose-tab.active {
+        color: var(--color-primary);
+        border-bottom-color: var(--color-primary);
+    }
+    .dark .compose-tab.active { color: var(--color-primary); }
+
+    /* --- Stack list loading skeleton --- */
+    .stack-skeleton {
+        height: 52px;
+        border-radius: 10px;
+        margin-bottom: 4px;
+        background: linear-gradient(90deg, rgba(0,0,0,0.04) 25%, rgba(0,0,0,0.08) 50%, rgba(0,0,0,0.04) 75%);
+        background-size: 200% 100%;
+        animation: skeleton-shimmer 1.4s infinite;
+    }
+    .dark .stack-skeleton {
+        background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
+        background-size: 200% 100%;
+        animation: skeleton-shimmer 1.4s infinite;
+    }
 
     /* --- Lost connection banner --- */
     .lost-connection {
@@ -436,6 +556,26 @@ h2 { font-size: 26px; }
     .slide-fade-up-leave-active { transition: all 0.2s var(--ease-in); }
     .slide-fade-up-enter-from,
     .slide-fade-up-leave-to { transform: translateY(-50px); opacity: 0; }
+
+    /* Drawer backdrop fade */
+    .drawer-fade-enter-active { transition: opacity 0.25s ease; }
+    .drawer-fade-leave-active { transition: opacity 0.2s ease; }
+    .drawer-fade-enter-from,
+    .drawer-fade-leave-to { opacity: 0; }
+
+    /* Drawer panel slide-in from left */
+    .drawer-slide-enter-active { transition: transform 0.25s var(--ease-out); }
+    .drawer-slide-leave-active { transition: transform 0.2s var(--ease-in); }
+    .drawer-slide-enter-from,
+    .drawer-slide-leave-to { transform: translateX(-100%); }
+}
+
+/* ============================================================
+   Skeleton shimmer keyframe
+   ============================================================ */
+@keyframes skeleton-shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
 }
 
 /* ============================================================
