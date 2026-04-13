@@ -472,6 +472,10 @@ function updateStack() {
         toast.toastRes(res);
         if (res.ok) {
             updateDetails.value = null;
+            if (globalStack.value) {
+                globalStack.value.updateAvailable = false;
+            }
+            stack.updateAvailable = false;
             requestServiceStatus();
         }
     });
