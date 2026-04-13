@@ -16,7 +16,7 @@
             <button v-if="!isEditMode && active" class="btn btn-normal" :disabled="processing" @click="emit('restart')">
                 <RotateCwIcon :size="14" class="mr-1" /> {{ $t("restartStack") }}
             </button>
-            <button v-if="!isEditMode" class="btn btn-normal" :disabled="processing" @click="emit('update')">
+            <button v-if="!isEditMode" class="btn" :class="stack.updateAvailable || updateAvailable ? 'btn-warning' : 'btn-normal'" :disabled="processing" @click="emit('update')">
                 <CloudDownloadIcon :size="14" class="mr-1" /> {{ $t("updateStack") }}
             </button>
             <button v-if="!isEditMode && active" class="btn btn-normal" :disabled="processing" @click="emit('stop')">
@@ -56,6 +56,7 @@ defineProps<{
     isAdd: boolean;
     active: boolean;
     processing: boolean;
+    updateAvailable?: boolean;
 }>();
 
 const emit = defineEmits<{

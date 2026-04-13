@@ -26,6 +26,7 @@
                 @down="downStack"
                 @discard="discardStack"
                 @delete="showDeleteDialog = true"
+                :update-available="globalStack?.updateAvailable"
             />
 
             <!-- URLs -->
