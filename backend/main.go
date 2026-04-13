@@ -160,8 +160,12 @@ func run(cfg *Config) error {
 	c.AddFunc("@every 10s", srv.BroadcastStackList)
 	srv.Cron = c
 
-	// Register daily update-check job if configured.
+	// Register daily update-check job. Default to 02:00 if never explicitly set.
 	updateCheckTime, _ := models.GetUpdateCheckTime(ctx)
+	if updateCheckTime == "" {
+		updateCheckTime = "02:00"
+		_ = models.SetSetting(ctx, "updateCheckTime", updateCheckTime, "general")
+	}
 	srv.SetUpdateCheckSchedule(updateCheckTime)
 
 	c.Start()
