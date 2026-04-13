@@ -240,6 +240,23 @@ function checkAllUpdates() {
             const names = Object.keys(results);
             totalCheckedNum.value = names.length;
             updatesAvailableNum.value = names.filter(n => results[n].updateAvailable).length;
+
+            // Merge updateAvailable back into the store so StackListItem badges update.
+            // The backend returns results keyed by stack name; the store keys stacks as
+            // "name_" for local stacks and "name_endpoint" for agent stacks.
+            for (const name of names) {
+                const storeKey = name + "_";
+                if (socketStore.stackList[storeKey]) {
+                    socketStore.stackList[storeKey].updateAvailable = results[name].updateAvailable;
+                }
+                // Also update agent stacks
+                for (const endpoint in socketStore.allAgentStackList) {
+                    const agentStack = socketStore.allAgentStackList[endpoint].stackList[name];
+                    if (agentStack) {
+                        agentStack.updateAvailable = results[name].updateAvailable;
+                    }
+                }
+            }
         } else {
             toast.toastRes(res);
         }

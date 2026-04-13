@@ -231,7 +231,16 @@ export const useSocketStore = defineStore("socket", () => {
                             delete stackList.value[key];
                         }
                     }
-                    Object.assign(stackList.value, incoming);
+                    // Merge incoming but preserve updateAvailable if the backend sends null/undefined —
+                    // the backend's GetStackList creates fresh structs without running CheckUpdates,
+                    // so a broadcast would otherwise erase results from checkAllStacksUpdates.
+                    for (const key in incoming) {
+                        const prev = stackList.value[key];
+                        stackList.value[key] = {
+                            ...incoming[key],
+                            updateAvailable: incoming[key].updateAvailable ?? prev?.updateAvailable,
+                        };
+                    }
                 } else {
                     if (!allAgentStackList.value[res.endpoint]) {
                         allAgentStackList.value[res.endpoint] = { stackList: {} };
@@ -243,7 +252,13 @@ export const useSocketStore = defineStore("socket", () => {
                             delete target[key];
                         }
                     }
-                    Object.assign(target, incoming);
+                    for (const key in incoming) {
+                        const prev = target[key];
+                        target[key] = {
+                            ...incoming[key],
+                            updateAvailable: incoming[key].updateAvailable ?? prev?.updateAvailable,
+                        };
+                    }
                 }
             }
         });
