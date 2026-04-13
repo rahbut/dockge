@@ -16,9 +16,9 @@
                     </div>
 
                     <!-- Maintenance actions -->
-                    <div class="shadow-box big-padding mb-4">
+                    <div class="shadow-box big-padding mb-4 flex flex-wrap items-start justify-around gap-4">
                         <!-- Check for Updates -->
-                        <div class="text-center mb-4 pb-4 border-b border-gray-200 dark:border-[#1d2634]">
+                        <div class="text-center flex-1">
                             <button class="btn btn-normal" :disabled="checkingUpdates" @click="checkAllUpdates">
                                 <RefreshCwIcon :size="14" class="mr-1 inline" :class="{ 'animate-spin': checkingUpdates }" />
                                 {{ checkingUpdates ? $t("checkingForUpdates") : $t("checkForUpdates") }}
@@ -34,7 +34,7 @@
                         </div>
 
                         <!-- Prune Images -->
-                        <div class="text-center">
+                        <div class="text-center flex-1">
                             <div class="inline-flex btn-group">
                                 <button class="btn btn-normal" :disabled="pruning" @click="pruneImages(false)">
                                     <Trash2Icon :size="14" class="mr-1 inline" />
