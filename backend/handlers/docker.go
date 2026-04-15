@@ -6,8 +6,10 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/rs/zerolog/log"
 	sio "github.com/zishang520/socket.io/servers/socket/v3"
 
+	"github.com/rahbut/dockge/backend/models"
 	"github.com/rahbut/dockge/backend/stack"
 	"github.com/rahbut/dockge/backend/terminal"
 )
@@ -246,6 +248,12 @@ func RegisterDockerHandlers(socket *sio.Socket, srv *Server) {
 					ack(errResp(err.Error()))
 				}
 				return
+			}
+			// Persist so late-connecting clients and future scheduled checks
+			// can use these results (same as the scheduled check does).
+			ctx := context.Background()
+			if perr := models.SetLastUpdateResults(ctx, allResults); perr != nil {
+				log.Warn().Err(perr).Msg("checkAllStacksUpdates: failed to persist results")
 			}
 			if ack != nil {
 				ack(map[string]any{"ok": true, "allResults": allResults})

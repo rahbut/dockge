@@ -31,7 +31,17 @@ type Server struct {
 // RunUpdateCheck checks every managed stack for image updates and returns a
 // results map keyed by stack name. It does NOT broadcast — callers decide
 // whether to ack a socket response or broadcast to all connected clients.
+//
+// Prior results are loaded from the DB so that a transient registry error for
+// a service does not silently flip its status to "no update available". When
+// GetRegistryDigest fails (Error == "registryError"), the previous known
+// updateAvailable value is preserved instead of defaulting to false.
 func (srv *Server) RunUpdateCheck() (map[string]any, error) {
+	ctx := context.Background()
+
+	// Load last-known results to use as fallback for registry errors.
+	prior, _ := models.GetLastUpdateResults(ctx)
+
 	stacks, err := stack.GetStackList(srv.StacksDir, false)
 	if err != nil {
 		return nil, err
@@ -43,24 +53,45 @@ func (srv *Server) RunUpdateCheck() (map[string]any, error) {
 		}
 		st.Load()
 		results, _ := st.CheckUpdates()
+
 		hasUpdate := false
-		for _, r := range results {
-			if r.UpdateAvailable {
+		for svcName, r := range results {
+			if r.Error == "registryError" {
+				// Registry was unreachable — fall back to the prior known state
+				// for this service so a transient failure doesn't hide real updates.
+				if p, ok := prior[name]; ok {
+					if snap, ok := p.Services[svcName]; ok && snap.UpdateAvailable {
+						hasUpdate = true
+					}
+				}
+			} else if r.UpdateAvailable {
 				hasUpdate = true
-				break
 			}
 		}
+
+		// Build the services sub-map as map[string]any for JSON compatibility.
+		services := make(map[string]any, len(results))
+		for svcName, r := range results {
+			services[svcName] = map[string]any{
+				"updateAvailable": r.UpdateAvailable,
+				"image":           r.Image,
+				"error":           r.Error,
+			}
+		}
+
 		allResults[name] = map[string]any{
 			"updateAvailable": hasUpdate,
-			"services":        results,
+			"services":        services,
 		}
 	}
 	return allResults, nil
 }
 
-// ScheduledUpdateCheck runs RunUpdateCheck and broadcasts the results to all
-// connected clients so their nav badges update without a manual check.
+// ScheduledUpdateCheck runs RunUpdateCheck, broadcasts the results to all
+// connected clients so their nav badges update without a manual check, and
+// persists the results to the DB so late-connecting clients also see them.
 func (srv *Server) ScheduledUpdateCheck() {
+	ctx := context.Background()
 	log.Info().Msg("Scheduled update check: starting")
 	allResults, err := srv.RunUpdateCheck()
 	if err != nil {
@@ -81,6 +112,11 @@ func (srv *Server) ScheduledUpdateCheck() {
 		"ok":         true,
 		"allResults": allResults,
 	})
+	// Persist results so clients that connect after the broadcast still see
+	// correct update badges via BroadcastStackList (which merges cached values).
+	if err := models.SetLastUpdateResults(ctx, allResults); err != nil {
+		log.Warn().Err(err).Msg("Scheduled update check: failed to persist results")
+	}
 }
 
 // SetUpdateCheckSchedule configures (or clears) the daily update-check cron
@@ -122,14 +158,31 @@ func (srv *Server) BroadcastStackListAfter(d time.Duration) {
 // BroadcastStackList builds the stack list and broadcasts it to all connected
 // sockets as an "agent" event with the local endpoint ("").
 // stackList is a map[stackName]stackObject — the frontend iterates with for...in.
+//
+// Cached update-check results are merged in so that clients connecting after a
+// scheduled check (e.g. opening the browser the morning after a 2am run) still
+// see correct updateAvailable badges without needing to trigger a manual check.
 func (srv *Server) BroadcastStackList() {
+	ctx := context.Background()
 	stacks, err := stack.GetStackList(srv.StacksDir, false)
 	if err != nil {
 		return
 	}
+
+	// Load the last-known update results from the DB.
+	cached, _ := models.GetLastUpdateResults(ctx)
+
 	list := make(map[string]any, len(stacks))
 	for name, st := range stacks {
-		list[name] = st.ToSimpleJSON()
+		obj := st.ToSimpleJSON()
+		// Overlay cached updateAvailable when the stack struct has no live result
+		// (UpdateAvailable == nil means CheckUpdates has not run for this instance).
+		if obj["updateAvailable"] == nil {
+			if entry, ok := cached[name]; ok {
+				obj["updateAvailable"] = entry.UpdateAvailable
+			}
+		}
+		list[name] = obj
 	}
 	// Server → client "agent" events use: emit("agent", eventName, payload)
 	// The endpoint is embedded inside the payload, NOT as a leading argument.

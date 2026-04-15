@@ -5,6 +5,7 @@ package models
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"sync"
 	"time"
 
@@ -121,4 +122,78 @@ func GetPrimaryHostname(ctx context.Context) (string, error) {
 // or "" if the feature is disabled.
 func GetUpdateCheckTime(ctx context.Context) (string, error) {
 	return GetSetting(ctx, "updateCheckTime")
+}
+
+// ─── Update check result cache ────────────────────────────────────────────────
+
+const lastUpdateResultsKey = "lastUpdateResults"
+
+// UpdateCheckEntry holds the persisted result for a single stack.
+type UpdateCheckEntry struct {
+	UpdateAvailable bool                       `json:"updateAvailable"`
+	Services        map[string]ServiceSnapshot `json:"services"`
+}
+
+// ServiceSnapshot is a minimal, serialisable record of a per-service result.
+type ServiceSnapshot struct {
+	UpdateAvailable bool   `json:"updateAvailable"`
+	Error           string `json:"error,omitempty"`
+}
+
+// SetLastUpdateResults marshals allResults (keyed by stack name) and persists
+// the JSON blob in the setting table so late-connecting clients can see the
+// last-known update status after a scheduled check.
+//
+// allResults values are expected to be map[string]any with keys
+// "updateAvailable" (bool) and "services" (map[string]ServiceUpdateResult-like).
+func SetLastUpdateResults(ctx context.Context, allResults map[string]any) error {
+	// Convert the generic map to a typed, JSON-safe structure.
+	typed := make(map[string]UpdateCheckEntry, len(allResults))
+	for name, v := range allResults {
+		m, ok := v.(map[string]any)
+		if !ok {
+			continue
+		}
+		entry := UpdateCheckEntry{}
+		if av, ok := m["updateAvailable"].(bool); ok {
+			entry.UpdateAvailable = av
+		}
+		if svcs, ok := m["services"].(map[string]any); ok {
+			entry.Services = make(map[string]ServiceSnapshot, len(svcs))
+			for svcName, sv := range svcs {
+				if sm, ok := sv.(map[string]any); ok {
+					snap := ServiceSnapshot{}
+					if a, ok := sm["updateAvailable"].(bool); ok {
+						snap.UpdateAvailable = a
+					}
+					if e, ok := sm["error"].(string); ok {
+						snap.Error = e
+					}
+					entry.Services[svcName] = snap
+				}
+			}
+		}
+		typed[name] = entry
+	}
+
+	raw, err := json.Marshal(typed)
+	if err != nil {
+		return err
+	}
+	return SetSetting(ctx, lastUpdateResultsKey, string(raw), "internal")
+}
+
+// GetLastUpdateResults returns the last-persisted update check results, keyed
+// by stack name. Returns an empty map (never nil) when no results have been
+// stored yet.
+func GetLastUpdateResults(ctx context.Context) (map[string]UpdateCheckEntry, error) {
+	raw, err := GetSetting(ctx, lastUpdateResultsKey)
+	if err != nil || raw == "" {
+		return map[string]UpdateCheckEntry{}, err
+	}
+	var out map[string]UpdateCheckEntry
+	if err := json.Unmarshal([]byte(raw), &out); err != nil {
+		return map[string]UpdateCheckEntry{}, nil
+	}
+	return out, nil
 }

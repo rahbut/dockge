@@ -7,8 +7,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/rs/zerolog/log"
 	sio "github.com/zishang520/socket.io/servers/socket/v3"
 
+	"github.com/rahbut/dockge/backend/models"
 	"github.com/rahbut/dockge/backend/stack"
 	"github.com/rahbut/dockge/backend/terminal"
 )
@@ -225,28 +227,14 @@ func dispatchLocalAgentEvent(socket *sio.Socket, srv *Server, eventName string, 
 		return map[string]any{"ok": true, "serviceStatusList": out}
 
 	case "checkAllStacksUpdates":
-		stacks, err := stack.GetStackList(srv.StacksDir, false)
+		allResults, err := srv.RunUpdateCheck()
 		if err != nil {
 			return errResp(err.Error())
 		}
-		allResults := make(map[string]any)
-		for name, st := range stacks {
-			if !st.IsManagedByDockge() {
-				continue
-			}
-			st.Load()
-			results, _ := st.CheckUpdates()
-			hasUpdate := false
-			for _, r := range results {
-				if r.UpdateAvailable {
-					hasUpdate = true
-					break
-				}
-			}
-			allResults[name] = map[string]any{
-				"updateAvailable": hasUpdate,
-				"services":        results,
-			}
+		// Persist so late-connecting clients and future scheduled checks
+		// can use these results (same as the scheduled check does).
+		if perr := models.SetLastUpdateResults(ctx, allResults); perr != nil {
+			log.Warn().Err(perr).Msg("checkAllStacksUpdates: failed to persist results")
 		}
 		return map[string]any{"ok": true, "allResults": allResults}
 

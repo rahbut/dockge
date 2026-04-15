@@ -2,10 +2,8 @@
     <div class="shadow-box big-padding mb-3">
         <div class="flex gap-2">
             <div class="flex-1 min-w-0">
-                <h4>{{ name }}</h4>
-                <div class="image mb-2 text-sm text-gray-500 dark:text-gray-300">
-                    <span class="mr-1">{{ imageName }}:</span><span class="tag">{{ imageTag }}</span>
-                </div>
+                <h4 class="truncate">{{ name }}</h4>
+                <div class="image mb-2 text-sm text-gray-500 dark:text-gray-300">{{ imageName }}:{{ imageTag }}</div>
                 <div v-if="!isEditMode" class="flex flex-wrap gap-1">
                     <span class="badge" :class="bgStyle">{{ status }}</span>
                     <span v-if="updateStatus?.updateAvailable" class="badge bg-warning" :title="$t('updateAvailable')">
@@ -175,7 +173,5 @@ function remove() {
 
 <style scoped>
 .image { font-size: 0.8rem; color: #6c757d; }
-.image .tag { color: #33383b; }
 .dark .image { color: #9ca3af; }
-.dark .image .tag { color: #d1d5db; }
 </style>
