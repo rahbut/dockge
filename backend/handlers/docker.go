@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/rs/zerolog/log"
 	sio "github.com/zishang520/socket.io/servers/socket/v3"
@@ -195,6 +196,13 @@ func RegisterDockerHandlers(socket *sio.Socket, srv *Server) {
 				}
 				return
 			}
+			// Clear the persisted update badge so the next BroadcastStackList
+			// call does not re-overlay the stale "updateAvailable: true" value
+			// from the DB cache.
+			if err := models.ClearStackUpdateResult(context.Background(), name); err != nil {
+				log.Warn().Err(err).Str("stack", name).Msg("Failed to clear update result cache")
+			}
+			go srv.BroadcastStackListAfter(500 * time.Millisecond)
 			if ack != nil {
 				ack(map[string]any{"ok": true, "msg": "Updated", "msgi18n": true})
 			}

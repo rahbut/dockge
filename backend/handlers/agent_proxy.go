@@ -195,6 +195,12 @@ func dispatchLocalAgentEvent(socket *sio.Socket, srv *Server, eventName string, 
 		if err := st.Update(terminal.NewSocketAdapter(socket, "")); err != nil {
 			return errResp(err.Error())
 		}
+		// Clear the persisted update badge so the next BroadcastStackList
+		// call does not re-overlay the stale "updateAvailable: true" value
+		// from the DB cache.
+		if err := models.ClearStackUpdateResult(context.Background(), name); err != nil {
+			log.Warn().Err(err).Str("stack", name).Msg("Failed to clear update result cache")
+		}
 		go srv.BroadcastStackListAfter(500 * time.Millisecond)
 		return map[string]any{"ok": true, "msg": "Updated", "msgi18n": true}
 

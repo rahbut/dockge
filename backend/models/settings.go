@@ -197,3 +197,22 @@ func GetLastUpdateResults(ctx context.Context) (map[string]UpdateCheckEntry, err
 	}
 	return out, nil
 }
+
+// ClearStackUpdateResult removes the persisted update-check entry for a single
+// stack after a successful update operation, so the stale badge does not
+// reappear from the DB cache on the next BroadcastStackList call.
+func ClearStackUpdateResult(ctx context.Context, stackName string) error {
+	results, err := GetLastUpdateResults(ctx)
+	if err != nil || len(results) == 0 {
+		return err
+	}
+	if _, exists := results[stackName]; !exists {
+		return nil
+	}
+	delete(results, stackName)
+	raw, err := json.Marshal(results)
+	if err != nil {
+		return err
+	}
+	return SetSetting(ctx, lastUpdateResultsKey, string(raw), "internal")
+}
