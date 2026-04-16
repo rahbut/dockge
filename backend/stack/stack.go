@@ -691,6 +691,15 @@ func (s *Stack) JoinContainerTerminal(socket terminal.Emitter, serviceName, shel
 
 // ToSimpleJSON returns a lean representation for the stack list broadcast.
 func (s *Stack) ToSimpleJSON() map[string]interface{} {
+	// Emit an untyped nil for updateAvailable when it hasn't been checked yet.
+	// If we place the *bool pointer directly into a map[string]interface{}, Go
+	// stores a typed nil ((*bool)(nil)) which is NOT equal to the untyped nil
+	// checked in BroadcastStackList — causing the DB-cached value to be skipped
+	// and every 10-second broadcast to reset badges to null on the client.
+	var ua interface{}
+	if s.UpdateAvailable != nil {
+		ua = *s.UpdateAvailable
+	}
 	return map[string]interface{}{
 		"name":              s.Name,
 		"status":            s.Status,
@@ -698,7 +707,7 @@ func (s *Stack) ToSimpleJSON() map[string]interface{} {
 		"isManagedByDockge": s.IsManagedByDockge(),
 		"composeFileName":   s.ComposeFileName,
 		"endpoint":          s.endpoint,
-		"updateAvailable":   s.UpdateAvailable,
+		"updateAvailable":   ua,
 	}
 }
 

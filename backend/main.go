@@ -171,6 +171,16 @@ func run(cfg *Config) error {
 	c.Start()
 	defer c.Stop()
 
+	// Run an initial update check in the background shortly after startup so
+	// the DB cache is populated before any client connects — without delaying
+	// the HTTP server from becoming ready. The small delay lets Docker's state
+	// settle and avoids hammering registries before the server is fully up.
+	go func() {
+		time.Sleep(15 * time.Second)
+		log.Info().Msg("Startup update check: starting")
+		srv.ScheduledUpdateCheck()
+	}()
+
 	// ── HTTP / HTTPS server ───────────────────────────────────────────────
 	addr := fmt.Sprintf("%s:%d", cfg.Hostname, cfg.Port)
 	httpServer := &http.Server{
