@@ -1,9 +1,9 @@
 <template>
-    <div class="shadow-box" :class="{ 'fit-height': fitHeight }">
+    <div class="shadow-box" :class="{ 'fit-height': fitHeight }" @mouseenter="hovered = true" @mouseleave="hovered = false">
         <button
             v-if="mode === 'displayOnly'"
             class="copy-btn"
-            :class="{ copied: copyState === 'copied' }"
+            :class="{ copied: copyState === 'copied', visible: hovered || copyState === 'copied' }"
             :title="copyState === 'copied' ? 'Copied!' : 'Copy log to clipboard'"
             @click="copyBufferToClipboard"
         >
@@ -56,6 +56,7 @@ const toast = useToastHelper();
 
 const terminalEl = ref<HTMLElement | null>(null);
 const copyState = ref<"idle" | "copied">("idle");
+const hovered = ref(false);
 let terminal: Terminal;
 let terminalFitAddOn: FitAddon | null = null;
 let visibilityObserver: IntersectionObserver | null = null;
@@ -369,7 +370,7 @@ defineExpose({ bind });
     position: absolute;
     top: 0.35rem;
     right: 0.4rem;
-    z-index: 10;
+    z-index: 100;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -385,7 +386,7 @@ defineExpose({ bind });
     transition: opacity 0.15s, color 0.15s, background 0.15s;
 }
 
-.shadow-box:hover .copy-btn,
+.copy-btn.visible,
 .copy-btn:focus-visible {
     opacity: 1;
 }
