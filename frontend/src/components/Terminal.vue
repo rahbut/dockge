@@ -335,10 +335,27 @@ function handleContextMenu(event: Event) {
 }
 
 async function copyToClipboard(text: string) {
+    if (navigator.clipboard?.writeText) {
+        try {
+            await navigator.clipboard.writeText(text);
+            return;
+        } catch {
+            // Clipboard API unavailable (e.g. plain HTTP) – fall through to legacy path
+        }
+    }
+    // Legacy fallback for non-secure contexts
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    document.body.appendChild(textarea);
+    textarea.select();
     try {
-        await navigator.clipboard.writeText(text);
-    } catch (e) {
-        console.error(e);
+        if (!document.execCommand("copy")) {
+            throw new Error("execCommand copy returned false");
+        }
+    } finally {
+        document.body.removeChild(textarea);
     }
 }
 
@@ -352,11 +369,16 @@ async function copyBufferToClipboard() {
     while (lines.length && lines[lines.length - 1].trim() === "") {
         lines.pop();
     }
-    await copyToClipboard(lines.join("\n"));
-    copyState.value = "copied";
-    setTimeout(() => {
-        copyState.value = "idle";
-    }, 2000);
+    try {
+        await copyToClipboard(lines.join("\n"));
+        copyState.value = "copied";
+        setTimeout(() => {
+            copyState.value = "idle";
+        }, 2000);
+    } catch (e) {
+        console.error("Copy failed", e);
+        toast.toastError("Failed to copy to clipboard");
+    }
 }
 
 defineExpose({ bind });
