@@ -292,6 +292,6 @@ function convertDockerRun() {
 .num { font-size: 30px; font-weight: bold; display: block; }
 .num.active { color: #74c2ff; }
 .num.exited { color: #dc3545; }
-.docker-run { border: none; font-family: 'JetBrains Mono', monospace; font-size: 15px; }
+.docker-run { border: none; font-family: var(--font-mono); font-size: 15px; }
 .agent a { text-decoration: none; }
 </style>

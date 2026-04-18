@@ -22,6 +22,10 @@
     --color-dark-border: #1d2634;
     --color-dark-header: #161b22;
 
+    /* Font stacks */
+    --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    --font-mono: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
     /* Easing */
     --ease-in: cubic-bezier(0.55, 0, 1, 0.45);
     --ease-out: cubic-bezier(0, 0.55, 0.45, 1);
@@ -37,8 +41,7 @@
    Global resets & base styles
    ============================================================ */
 #app {
-    font-family: BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif,
-        "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    font-family: var(--font-sans);
 }
 
 h1 { font-size: 32px; }
@@ -376,7 +379,7 @@ h2 { font-size: 26px; }
 
     /* --- Editor box (CodeMirror wrapper) --- */
     .editor-box {
-        font-family: 'JetBrains Mono', monospace;
+        font-family: var(--font-mono);
         font-size: 14px;
         background-color: #fdf6e3;
         border-radius: 10px;
@@ -611,7 +614,7 @@ code {
     white-space: break-spaces;
     background-color: rgba(239, 239, 239, 0.15);
     border-radius: 6px;
-    font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-family: var(--font-mono);
     color: black;
 }
 .dark code { color: var(--color-dark-font); }
