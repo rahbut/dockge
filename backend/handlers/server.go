@@ -202,5 +202,6 @@ func (srv *Server) SendInfo(socket *sio.Socket) {
 		"version":         srv.Version,
 		"isContainer":     srv.IsContainer,
 		"primaryHostname": primary,
+		"selfStackName":   stack.SelfStackName(),
 	})
 }

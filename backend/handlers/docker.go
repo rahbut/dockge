@@ -190,6 +190,31 @@ func RegisterDockerHandlers(socket *sio.Socket, srv *Server) {
 				return
 			}
 			st.Load()
+
+			// Self-update path: when updating the stack that dockge itself is
+			// running inside, docker compose up -d will stop this process.
+			// Pull first (blocking, with terminal output), clear the update
+			// badge, send the ack, then spawn the detached up -d. The socket.io
+			// client will reconnect automatically once the new container is up.
+			if name == stack.SelfStackName() {
+				if err := st.SelfUpdate(terminal.NewSocketAdapter(socket, "")); err != nil {
+					if ack != nil {
+						ack(errResp(err.Error()))
+					}
+					return
+				}
+				if err := models.ClearStackUpdateResult(context.Background(), name); err != nil {
+					log.Warn().Err(err).Str("stack", name).Msg("Failed to clear update result cache")
+				}
+				if ack != nil {
+					ack(map[string]any{"ok": true, "msg": "Updated", "msgi18n": true})
+				}
+				// Small delay to allow the ack to reach the client before
+				// the container is replaced.
+				time.Sleep(500 * time.Millisecond)
+				return
+			}
+
 			if err := st.Update(terminal.NewSocketAdapter(socket, "")); err != nil {
 				if ack != nil {
 					ack(errResp(err.Error()))

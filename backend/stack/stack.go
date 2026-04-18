@@ -11,12 +11,24 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	"syscall"
 
 	"gopkg.in/yaml.v3"
 
 	"github.com/rahbut/dockge/backend/models"
 	"github.com/rahbut/dockge/backend/terminal"
 )
+
+// SelfStackName returns the Docker Compose project name that dockge itself
+// is running inside. It reads COMPOSE_PROJECT_NAME from the environment
+// (set automatically by Docker Compose inside the container), falling back
+// to "dockge" for bare deployments or local development.
+func SelfStackName() string {
+	if name := os.Getenv("COMPOSE_PROJECT_NAME"); name != "" {
+		return name
+	}
+	return "dockge"
+}
 
 // Status codes — mirrors util-common.ts.
 const (
@@ -343,6 +355,35 @@ func (s *Stack) Update(socket terminal.Emitter) error {
 	s.UpdateAvailable = nil
 	s.UpdateDetails = nil
 	return nil
+}
+
+// SelfUpdate handles updating the stack that dockge itself is running inside.
+// It runs docker compose pull with full terminal output (blocking), then spawns
+// a detached docker compose up -d process in a new session so it survives after
+// this process is killed when Docker stops the current container.
+//
+// The caller must send its success ack to the client BEFORE calling this method
+// returns, because the detached up -d will stop the running container shortly
+// after. Requires restart: unless-stopped (or always) in the compose file so
+// the new container is started automatically by Docker.
+func (s *Stack) SelfUpdate(socket terminal.Emitter) error {
+	code, err := terminal.Exec(socket, s.terminalName(), "docker",
+		s.getComposeOptions("pull"), s.Path())
+	if err != nil {
+		return err
+	}
+	if code != 0 {
+		return fmt.Errorf("pull failed (exit %d)", code)
+	}
+
+	// Spawn a detached docker compose up -d that will outlive this process.
+	// Setsid puts the child in a new session group so it is not killed when
+	// Docker stops the parent container.
+	args := s.getComposeOptions("up", "-d", "--remove-orphans")
+	cmd := exec.Command("docker", args...)
+	cmd.Dir = s.Path()
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
+	return cmd.Start() // intentionally do not Wait()
 }
 
 // HasBuildServices reports whether any service in the compose YAML uses build:.
