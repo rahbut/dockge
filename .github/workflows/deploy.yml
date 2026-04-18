@@ -88,7 +88,7 @@ jobs:
           CGO_ENABLED=0 GOOS=linux GOARCH=${{ matrix.go_arch }} \
             ${{ matrix.go_arm && format('GOARM={0}', matrix.go_arm) || '' }} \
             go build \
-              -ldflags="-s -w -X main.Version=$(cat backend/version.txt 2>/dev/null || echo dev)" \
+              -ldflags="-s -w -X main.Version=$(node -p 'require("./package.json").version')" \
               -trimpath \
               -o dist/dockge-server \
               ./backend/
