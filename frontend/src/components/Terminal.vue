@@ -351,7 +351,9 @@ async function copyBufferToClipboard() {
     }
     await copyToClipboard(lines.join("\n"));
     copyState.value = "copied";
-    setTimeout(() => { copyState.value = "idle"; }, 2000);
+    setTimeout(() => {
+        copyState.value = "idle";
+    }, 2000);
 }
 
 defineExpose({ bind });

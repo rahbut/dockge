@@ -38,13 +38,17 @@ const upgrading = ref(false);
 
 const selfStack = computed(() => {
     const name = socketStore.info.selfStackName as string | undefined;
-    if (!name) return null;
+    if (!name) {
+        return null;
+    }
     return socketStore.stackList[name] ?? null;
 });
 
 function upgradeDockge() {
     const name = socketStore.info.selfStackName as string | undefined;
-    if (!name) return;
+    if (!name) {
+        return;
+    }
     upgrading.value = true;
     socketStore.emitAgent("", "updateStack", name, (res: SocketResponse) => {
         upgrading.value = false;
