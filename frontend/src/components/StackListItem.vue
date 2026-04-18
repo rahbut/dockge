@@ -4,7 +4,7 @@
         <div class="title">
             <span>{{ stack.name }}</span>
             <span v-if="stack.updateAvailable === true" :title="$t('updateAvailable')">
-                <ArrowUpCircleIcon :size="12" class="update-badge ml-1 inline" />
+                <ArrowUpCircleIcon :size="16" class="update-badge ml-1 inline" />
             </span>
             <div v-if="socketStore.agentCount > 1" class="endpoint">{{ endpointDisplay }}</div>
         </div>
@@ -50,5 +50,5 @@ const url = computed(() =>
     .endpoint { font-size: 12px; color: #575c62; }
 }
 .dim { opacity: 0.5; }
-.update-badge { color: #f0ad4e; font-size: 0.75em; }
+.update-badge { color: var(--color-warning); font-size: 0.75em; filter: drop-shadow(0 0 3px var(--color-warning)); }
 </style>
