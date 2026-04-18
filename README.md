@@ -78,10 +78,12 @@ Requirements:
 - Default Stacks Directory: `/opt/stacks`
 - Default Port: 5001
 
+> **Tip:** placing Dockge's own `compose.yaml` inside the stacks directory (as shown below) lets you upgrade Dockge directly from the UI — no shell access required. See [Self-upgrade via the UI](#self-upgrade-via-the-ui).
+
 ```
-# Create directories that store your stacks and stores Dockge's stack
-mkdir -p /opt/stacks /opt/dockge
-cd /opt/dockge
+# Create the stacks directory and Dockge's own stack folder within it
+mkdir -p /opt/stacks/dockge
+cd /opt/stacks/dockge
 
 # Download the compose.yaml
 curl https://raw.githubusercontent.com/rahbut/dockge/main/compose.yaml --output compose.yaml
@@ -97,8 +99,21 @@ Dockge is now running on http://localhost:5001
 
 ## How to Update
 
+### Self-upgrade via the UI
+
+If your Dockge `compose.yaml` is stored inside the managed stacks directory (e.g. `/opt/stacks/dockge/compose.yaml`), Dockge can upgrade itself without any shell access.
+
+- **About page** — go to Settings → About; an **Upgrade Dockge** button appears (highlighted in amber when a new image is available). Click it to pull the latest image and restart automatically.
+- **Stack page** — open the `dockge` stack and click the **Update** button in the action bar, just like any other stack.
+
+In both cases Dockge pulls the new image with full progress output visible in the terminal pane, sends a confirmation, then restarts into the new container. The browser reconnects automatically once the new container is ready.
+
+> **Note:** self-upgrade requires `restart: unless-stopped` (or `restart: always`) in your `compose.yaml` so Docker starts the new container automatically. This is the default in the shipped `compose.yaml`.
+
+### Manual update
+
 ```bash
-cd /opt/dockge
+cd /opt/stacks/dockge
 docker compose pull && docker compose up -d
 ```
 
