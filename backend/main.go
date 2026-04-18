@@ -156,7 +156,7 @@ func run(cfg *Config) error {
 	router.Register(mux, frontendDist, io.ServeHandler(nil))
 
 	// ── Cron scheduler ────────────────────────────────────────────────────
-	c := cron.New(cron.WithSeconds()) // six-field spec: seconds minutes hours ...
+	c := cron.New(cron.WithSeconds(), cron.WithLocation(time.Local)) // six-field spec: seconds minutes hours ...
 	c.AddFunc("@every 10s", srv.BroadcastStackList)
 	srv.Cron = c
 

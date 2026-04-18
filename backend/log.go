@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"strings"
+	"time"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -11,7 +12,7 @@ import (
 // initLogger configures the global zerolog logger with console output
 // (colourised in development, JSON in production).
 func initLogger(cfg *Config) {
-	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
+	zerolog.TimeFieldFormat = time.RFC3339
 
 	if cfg.IsDev {
 		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})

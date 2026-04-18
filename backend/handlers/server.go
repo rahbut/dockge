@@ -144,7 +144,7 @@ func (srv *Server) SetUpdateCheckSchedule(timeStr string) {
 		return
 	}
 	srv.updateCronID = id
-	log.Info().Str("time", timeStr).Str("spec", spec).Msg("Scheduled update check: registered")
+	log.Info().Str("time", timeStr).Str("spec", spec).Str("tz", srv.Cron.Location().String()).Msg("Scheduled update check: registered")
 }
 
 // BroadcastStackListAfter broadcasts the stack list after a short delay to allow
