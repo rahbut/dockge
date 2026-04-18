@@ -5,13 +5,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
-	"syscall"
+	"time"
 
 	"gopkg.in/yaml.v3"
 
@@ -357,15 +359,30 @@ func (s *Stack) Update(socket terminal.Emitter) error {
 	return nil
 }
 
+// dockerSocketClient speaks to the Docker daemon over the unix socket.
+var dockerSocketClient = &http.Client{
+	Timeout: 60 * time.Second,
+	Transport: &http.Transport{
+		DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
+			return (&net.Dialer{}).DialContext(ctx, "unix", "/var/run/docker.sock")
+		},
+	},
+}
+
 // SelfUpdate handles updating the stack that dockge itself is running inside.
-// It runs docker compose pull with full terminal output (blocking), then spawns
-// a detached docker compose up -d process in a new session so it survives after
-// this process is killed when Docker stops the current container.
 //
-// The caller must send its success ack to the client BEFORE calling this method
-// returns, because the detached up -d will stop the running container shortly
-// after. Requires restart: unless-stopped (or always) in the compose file so
-// the new container is started automatically by Docker.
+// After docker compose pull completes, the new image is in the local cache.
+// We then use the Docker API to create a short-lived sibling container that
+// runs "docker compose up -d" against the stack directory. The sibling runs
+// on the host Docker daemon — completely outside our container's cgroup —
+// so it survives when Docker stops and recreates the dockge container.
+//
+// A detached subprocess (Setsid) cannot be used because the distroless image
+// runs inside a cgroup that Docker tears down entirely on container stop,
+// killing all processes regardless of session group. Using the Docker API to
+// create a sibling container is the standard approach (used by Watchtower etc.)
+//
+// The caller must send its success ack to the client before this returns.
 func (s *Stack) SelfUpdate(socket terminal.Emitter) error {
 	code, err := terminal.Exec(socket, s.terminalName(), "docker",
 		s.getComposeOptions("pull"), s.Path())
@@ -375,15 +392,100 @@ func (s *Stack) SelfUpdate(socket terminal.Emitter) error {
 	if code != 0 {
 		return fmt.Errorf("pull failed (exit %d)", code)
 	}
+	// Inspect our own container to get the image it was created from.
+	// Docker sets HOSTNAME to the short container ID inside a container.
+	containerID := os.Getenv("HOSTNAME")
+	if containerID == "" {
+		return fmt.Errorf("self-update: cannot determine container ID (HOSTNAME not set)")
+	}
+	inspectResp, err := dockerSocketClient.Get(
+		"http://localhost/v1.41/containers/" + containerID + "/json",
+	)
+	if err != nil {
+		return fmt.Errorf("self-update: inspect container: %w", err)
+	}
+	defer inspectResp.Body.Close()
+	var inspect struct {
+		Image  string `json:"Image"`
+		Config struct {
+			Image string `json:"Image"`
+		} `json:"Config"`
+	}
+	if err := json.NewDecoder(inspectResp.Body).Decode(&inspect); err != nil {
+		return fmt.Errorf("self-update: decode inspect: %w", err)
+	}
+	selfImage := inspect.Config.Image
+	if selfImage == "" {
+		selfImage = inspect.Image
+	}
+	if selfImage == "" {
+		return fmt.Errorf("self-update: could not determine self image from container inspect")
+	}
 
-	// Spawn a detached docker compose up -d that will outlive this process.
-	// Setsid puts the child in a new session group so it is not killed when
-	// Docker stops the parent container.
-	args := s.getComposeOptions("up", "-d", "--remove-orphans")
-	cmd := exec.Command("docker", args...)
-	cmd.Dir = s.Path()
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
-	return cmd.Start() // intentionally do not Wait()
+	return selfUpdateViaDockerAPI(selfImage, s.getComposeOptions("up", "-d", "--remove-orphans"), s.Path())
+}
+
+// selfUpdateViaDockerAPI creates a short-lived sibling container via the Docker
+// unix socket that runs "docker compose up -d" against the stack directory.
+// The sibling uses the newly-pulled dockge image (guaranteed to be in the local
+// cache) so no additional image pull is needed. It runs entirely in the Docker
+// daemon — outside our cgroup — so it survives when Docker stops this container.
+func selfUpdateViaDockerAPI(selfImage string, composeArgs []string, stackPath string) error {
+	// Build the sibling container config. We use our own image (just pulled) as
+	// the base since it already contains the docker binary and compose plugin at
+	// the expected paths. The entrypoint is overridden to run docker directly.
+	body, err := json.Marshal(map[string]any{
+		"Image":      selfImage,
+		"Entrypoint": []string{"/usr/local/bin/docker"},
+		"Cmd":        composeArgs,
+		"WorkingDir": stackPath,
+		"HostConfig": map[string]any{
+			"AutoRemove": true,
+			"Binds": []string{
+				"/var/run/docker.sock:/var/run/docker.sock",
+				// Mount the parent (stacks dir) so that relative --env-file
+				// paths like ../global.env resolve correctly inside the sibling.
+				filepath.Dir(stackPath) + ":" + filepath.Dir(stackPath),
+			},
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("self-update: marshal create body: %w", err)
+	}
+
+	createResp, err := dockerSocketClient.Post(
+		"http://localhost/v1.41/containers/create",
+		"application/json",
+		strings.NewReader(string(body)),
+	)
+	if err != nil {
+		return fmt.Errorf("self-update: create container: %w", err)
+	}
+	defer createResp.Body.Close()
+	if createResp.StatusCode != http.StatusCreated {
+		return fmt.Errorf("self-update: create container returned status %d", createResp.StatusCode)
+	}
+
+	var created struct {
+		Id string `json:"Id"`
+	}
+	if err := json.NewDecoder(createResp.Body).Decode(&created); err != nil {
+		return fmt.Errorf("self-update: decode create response: %w", err)
+	}
+
+	startResp, err := dockerSocketClient.Post(
+		"http://localhost/v1.41/containers/"+created.Id+"/start",
+		"application/json",
+		nil,
+	)
+	if err != nil {
+		return fmt.Errorf("self-update: start container: %w", err)
+	}
+	defer startResp.Body.Close()
+	if startResp.StatusCode != http.StatusNoContent {
+		return fmt.Errorf("self-update: start container returned status %d", startResp.StatusCode)
+	}
+	return nil
 }
 
 // HasBuildServices reports whether any service in the compose YAML uses build:.

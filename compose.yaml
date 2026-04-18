@@ -1,6 +1,6 @@
 services:
   dockge:
-    image: ghcr.io/rahbut/dockge:1
+    image: ghcr.io/rahbut/dockge:latest
     restart: unless-stopped
     ports:
       # Host Port : Container Port

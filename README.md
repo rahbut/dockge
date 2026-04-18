@@ -108,7 +108,7 @@ If your Dockge `compose.yaml` is stored inside the managed stacks directory (e.g
 
 In both cases Dockge pulls the new image with full progress output visible in the terminal pane, sends a confirmation, then restarts into the new container. The browser reconnects automatically once the new container is ready.
 
-> **Note:** self-upgrade requires `restart: unless-stopped` (or `restart: always`) in your `compose.yaml` so Docker starts the new container automatically. This is the default in the shipped `compose.yaml`.
+> **Note:** the shipped `compose.yaml` uses `restart: unless-stopped`, which is recommended but not required for the self-upgrade to work.
 
 ### Manual update
 
