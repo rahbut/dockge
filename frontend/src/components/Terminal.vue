@@ -1,5 +1,8 @@
 <template>
-    <div class="shadow-box" :class="{ 'fit-height': fitHeight }" @mouseenter="hovered = true" @mouseleave="hovered = false">
+    <div class="terminal-wrapper" :class="{ 'fit-height': fitHeight }" @mouseenter="hovered = true" @mouseleave="hovered = false">
+        <div class="shadow-box" :class="{ 'fit-height': fitHeight }">
+            <div v-pre ref="terminalEl" class="main-terminal"></div>
+        </div>
         <button
             v-if="mode === 'displayOnly'"
             class="copy-btn"
@@ -15,7 +18,6 @@
                 <polyline points="20 6 9 17 4 12"></polyline>
             </svg>
         </button>
-        <div v-pre ref="terminalEl" class="main-terminal"></div>
     </div>
 </template>
 
@@ -364,7 +366,8 @@ defineExpose({ bind });
 .main-terminal { overflow: hidden; }
 .fit-height .main-terminal { height: 100%; }
 
-.shadow-box { position: relative; }
+.terminal-wrapper { position: relative; }
+.fit-height.terminal-wrapper { height: 100%; }
 
 .copy-btn {
     position: absolute;
