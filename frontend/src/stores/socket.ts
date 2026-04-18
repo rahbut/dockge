@@ -101,6 +101,26 @@ export const useSocketStore = defineStore("socket", () => {
         });
     }
 
+    // Polls /health until a 200 is received, then reloads the page.
+    // Used after a self-update to ensure the new container is fully serving
+    // before the browser reloads to pick up new frontend assets.
+    function waitForHealthThenReload() {
+        const poll = () => {
+            fetch("/health")
+                .then((res) => {
+                    if (res.ok) {
+                        location.reload();
+                    } else {
+                        setTimeout(poll, 300);
+                    }
+                })
+                .catch(() => {
+                    setTimeout(poll, 300);
+                });
+        };
+        poll();
+    }
+
     function initSocketIO() {
         if (socketIO.initedSocketIO) {
             return;
@@ -128,6 +148,14 @@ export const useSocketStore = defineStore("socket", () => {
             socketIO.connected = true;
             socketIO.showReverseProxyGuide = false;
             agentStatusList.value[""] = "online";
+
+            // If a self-update was performed, verify the new container is fully
+            // ready via /health before reloading to pick up new frontend assets.
+            if (sessionStorage.getItem("reloadOnReconnect")) {
+                sessionStorage.removeItem("reloadOnReconnect");
+                waitForHealthThenReload();
+                return;
+            }
 
             // Dynamic import to avoid circular dep: auth <-> socket
             import("./auth").then(({ useAuthStore }) => {
@@ -193,6 +221,10 @@ export const useSocketStore = defineStore("socket", () => {
 
         socket.on("refresh", () => {
             location.reload();
+        });
+
+        socket.on("reloadOnReconnect", () => {
+            sessionStorage.setItem("reloadOnReconnect", "1");
         });
 
         socket.on("stackStatusList", (res: SocketResponse & { stackStatusList?: Record<string, number> }) => {

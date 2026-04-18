@@ -194,6 +194,14 @@ func (srv *Server) BroadcastStackList() {
 	})
 }
 
+// BroadcastReloadOnReconnect tells all connected clients to reload the page
+// the next time their socket reconnects. Used after a self-update so the
+// browser picks up the new frontend assets at the moment the new container
+// is ready, rather than at an arbitrary time while the container is restarting.
+func (srv *Server) BroadcastReloadOnReconnect() {
+	srv.SIOServer.Sockets().Emit("reloadOnReconnect")
+}
+
 // SendInfo emits server version and configuration info to a single connection.
 func (srv *Server) SendInfo(socket *sio.Socket) {
 	ctx := context.Background()

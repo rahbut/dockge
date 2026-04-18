@@ -194,7 +194,7 @@ func dispatchLocalAgentEvent(socket *sio.Socket, srv *Server, eventName string, 
 		st.Load()
 
 		// Self-update path: pull blocks with terminal output, then the
-		// detached up -d will replace this container. Ack before returning.
+		// sibling container will replace this container. Ack before returning.
 		if name == stack.SelfStackName() {
 			if err := st.SelfUpdate(terminal.NewSocketAdapter(socket, "")); err != nil {
 				return errResp(err.Error())
@@ -202,7 +202,8 @@ func dispatchLocalAgentEvent(socket *sio.Socket, srv *Server, eventName string, 
 			if err := models.ClearStackUpdateResult(context.Background(), name); err != nil {
 				log.Warn().Err(err).Str("stack", name).Msg("Failed to clear update result cache")
 			}
-			// Return the ack immediately; the detached up -d will restart the container.
+			// Tell all clients to reload on their next reconnect.
+			srv.BroadcastReloadOnReconnect()
 			return map[string]any{"ok": true, "msg": "Updated", "msgi18n": true}
 		}
 

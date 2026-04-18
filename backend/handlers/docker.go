@@ -209,9 +209,9 @@ func RegisterDockerHandlers(socket *sio.Socket, srv *Server) {
 				if ack != nil {
 					ack(map[string]any{"ok": true, "msg": "Updated", "msgi18n": true})
 				}
-				// Small delay to allow the ack to reach the client before
-				// the container is replaced.
-				time.Sleep(500 * time.Millisecond)
+				// Tell all clients to reload on their next reconnect, so they pick
+				// up new frontend assets the moment the new container is ready.
+				srv.BroadcastReloadOnReconnect()
 				return
 			}
 
