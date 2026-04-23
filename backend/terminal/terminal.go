@@ -280,6 +280,15 @@ func (t *Terminal) snapshotSockets() []Emitter {
 	return out
 }
 
+func (t *Terminal) Write(input string) {
+	t.mu.Lock()
+	f := t.ptyFile
+	t.mu.Unlock()
+	if f != nil {
+		f.WriteString(input)
+	}
+}
+
 func (t *Terminal) Close() {
 	t.mu.Lock()
 	f := t.ptyFile
@@ -362,15 +371,6 @@ type InteractiveTerminal struct {
 
 func NewInteractiveTerminal(name, file string, args []string, cwd string) *InteractiveTerminal {
 	return &InteractiveTerminal{Terminal: NewTerminal(name, file, args, cwd)}
-}
-
-func (it *InteractiveTerminal) Write(input string) {
-	it.mu.Lock()
-	f := it.ptyFile
-	it.mu.Unlock()
-	if f != nil {
-		f.WriteString(input)
-	}
 }
 
 // ─── MainTerminal ─────────────────────────────────────────────────────────────

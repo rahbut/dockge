@@ -1,12 +1,15 @@
 package stack
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/rs/zerolog/log"
 )
 
 var httpClient = &http.Client{Timeout: 30 * time.Second}
@@ -43,49 +46,107 @@ func ParseImageRef(image string) (registry, repository, tag string) {
 	return
 }
 
-// GetRegistryDigest fetches the current manifest digest for the given image
-// tag from its registry, using the OCI Distribution HTTP API (HEAD request).
-func GetRegistryDigest(registry, repository, tag string) (string, error) {
-	token, err := getAuthToken(registry, repository)
-	if err != nil {
-		return "", fmt.Errorf("registry auth: %w", err)
-	}
+// manifestAccept is the Accept header value sent for all manifest requests.
+var manifestAccept = strings.Join([]string{
+	"application/vnd.oci.image.index.v1+json",
+	"application/vnd.docker.distribution.manifest.list.v2+json",
+	"application/vnd.oci.image.manifest.v1+json",
+	"application/vnd.docker.distribution.manifest.v2+json",
+}, ", ")
 
+// GetRegistryDigest fetches the current manifest digest for the given image
+// tag from its registry, using the OCI Distribution HTTP API.
+//
+// It uses the standard WWW-Authenticate challenge flow to obtain a Bearer
+// token, which works with any OCI-compliant registry (Docker Hub, GHCR,
+// lscr.io, Quay, Harbor, etc.). If HEAD succeeds but the
+// docker-content-digest header is absent, it falls back to GET and computes
+// the digest from the response body.
+func GetRegistryDigest(registry, repository, tag string) (string, error) {
 	registryURL := registry
 	if !strings.Contains(registryURL, "://") {
 		registryURL = "https://" + registryURL
 	}
 	manifestURL := fmt.Sprintf("%s/v2/%s/manifests/%s", registryURL, repository, tag)
 
+	// Resolve a Bearer token — try well-known endpoints first (Docker Hub,
+	// GHCR), then fall back to the standard WWW-Authenticate challenge.
+	token, _ := getAuthToken(registry, repository)
+	if token == "" {
+		token, _ = authViaChallenge(manifestURL)
+	}
+
+	// HEAD request.
+	digest, err := fetchDigestHEAD(manifestURL, token)
+	if err != nil {
+		log.Debug().Err(err).Str("image", repository).Msg("HEAD manifest failed, falling back to GET")
+	}
+	if digest != "" {
+		return digest, nil
+	}
+
+	// GET fallback — compute digest from body.
+	digest, err = fetchDigestGET(manifestURL, token)
+	if err != nil {
+		return "", fmt.Errorf("registry GET: %w", err)
+	}
+	return digest, nil
+}
+
+func fetchDigestHEAD(manifestURL, token string) (string, error) {
 	req, err := http.NewRequest(http.MethodHead, manifestURL, nil)
 	if err != nil {
 		return "", err
 	}
-	req.Header.Set("Accept", strings.Join([]string{
-		"application/vnd.oci.image.index.v1+json",
-		"application/vnd.docker.distribution.manifest.list.v2+json",
-		"application/vnd.oci.image.manifest.v1+json",
-		"application/vnd.docker.distribution.manifest.v2+json",
-	}, ", "))
+	req.Header.Set("Accept", manifestAccept)
 	if token != "" {
 		req.Header.Set("Authorization", "Bearer "+token)
 	}
-
 	resp, err := httpClient.Do(req)
 	if err != nil {
 		return "", err
 	}
 	defer resp.Body.Close()
 	io.Copy(io.Discard, resp.Body)
-
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("registry returned status %d", resp.StatusCode)
+		return "", fmt.Errorf("HEAD returned status %d", resp.StatusCode)
 	}
-
-	digest := resp.Header.Get("docker-content-digest")
-	return digest, nil
+	return resp.Header.Get("docker-content-digest"), nil
 }
 
+func fetchDigestGET(manifestURL, token string) (string, error) {
+	req, err := http.NewRequest(http.MethodGet, manifestURL, nil)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Accept", manifestAccept)
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		io.Copy(io.Discard, resp.Body)
+		return "", fmt.Errorf("GET returned status %d", resp.StatusCode)
+	}
+	if d := resp.Header.Get("docker-content-digest"); d != "" {
+		io.Copy(io.Discard, resp.Body)
+		return d, nil
+	}
+	// Compute digest from body.
+	h := sha256.New()
+	if _, err := io.Copy(h, resp.Body); err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("sha256:%x", h.Sum(nil)), nil
+}
+
+// getAuthToken returns a Bearer token using well-known endpoints for Docker
+// Hub and GHCR. For any other registry it returns ("", nil) so the caller
+// can fall back to the WWW-Authenticate challenge flow.
 func getAuthToken(registry, repository string) (string, error) {
 	var authURL string
 	switch registry {
@@ -98,10 +159,86 @@ func getAuthToken(registry, repository string) (string, error) {
 			"https://ghcr.io/token?scope=repository:%s:pull",
 			repository)
 	default:
-		// Custom registries: attempt anonymous token endpoint; fail silently.
 		return "", nil
 	}
+	return fetchBearerToken(authURL)
+}
 
+// authViaChallenge performs an unauthenticated HEAD against manifestURL,
+// parses the WWW-Authenticate header on a 401 response, and fetches a
+// Bearer token from the advertised realm. This is the standard OCI token
+// flow and works with any compliant registry (lscr.io, quay.io, etc.).
+func authViaChallenge(manifestURL string) (string, error) {
+	req, err := http.NewRequest(http.MethodHead, manifestURL, nil)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Accept", manifestAccept)
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	io.Copy(io.Discard, resp.Body)
+
+	if resp.StatusCode != http.StatusUnauthorized {
+		return "", nil // no auth required (or unsupported)
+	}
+
+	wwwAuth := resp.Header.Get("WWW-Authenticate")
+	if !strings.HasPrefix(strings.ToLower(wwwAuth), "bearer ") {
+		return "", fmt.Errorf("unsupported WWW-Authenticate: %s", wwwAuth)
+	}
+
+	params := parseBearerParams(wwwAuth)
+	realm := params["realm"]
+	if realm == "" {
+		return "", fmt.Errorf("no realm in WWW-Authenticate")
+	}
+
+	tokenURL := realm
+	var qparts []string
+	if svc := params["service"]; svc != "" {
+		qparts = append(qparts, "service="+svc)
+	}
+	if scope := params["scope"]; scope != "" {
+		qparts = append(qparts, "scope="+scope)
+	}
+	if len(qparts) > 0 {
+		sep := "?"
+		if strings.Contains(tokenURL, "?") {
+			sep = "&"
+		}
+		tokenURL += sep + strings.Join(qparts, "&")
+	}
+
+	log.Debug().Str("tokenURL", tokenURL).Msg("registry auth via challenge")
+	return fetchBearerToken(tokenURL)
+}
+
+// parseBearerParams extracts key="value" pairs from a
+// Bearer realm="...",service="...",scope="..." header.
+func parseBearerParams(header string) map[string]string {
+	out := make(map[string]string)
+	idx := strings.Index(header, " ")
+	if idx < 0 {
+		return out
+	}
+	for _, part := range strings.Split(header[idx+1:], ",") {
+		part = strings.TrimSpace(part)
+		eq := strings.Index(part, "=")
+		if eq < 0 {
+			continue
+		}
+		key := strings.TrimSpace(part[:eq])
+		val := strings.Trim(strings.TrimSpace(part[eq+1:]), `"`)
+		out[key] = val
+	}
+	return out
+}
+
+// fetchBearerToken GETs the given token URL and returns the token.
+func fetchBearerToken(authURL string) (string, error) {
 	resp, err := httpClient.Get(authURL)
 	if err != nil {
 		return "", err
@@ -111,12 +248,16 @@ func getAuthToken(registry, repository string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
 	var result struct {
-		Token string `json:"token"`
+		Token       string `json:"token"`
+		AccessToken string `json:"access_token"`
 	}
 	if err := json.Unmarshal(body, &result); err != nil {
 		return "", fmt.Errorf("parse auth token: %w", err)
 	}
-	return result.Token, nil
+	// Some registries use "access_token" instead of "token".
+	if result.Token != "" {
+		return result.Token, nil
+	}
+	return result.AccessToken, nil
 }
