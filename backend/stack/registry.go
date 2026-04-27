@@ -39,6 +39,16 @@ func ParseImageRef(image string) (registry, repository, tag string) {
 		}
 	}
 
+	// Normalize Docker Hub aliases to the canonical registry endpoint.
+	// Docker Engine treats "docker.io" and "index.docker.io" as aliases for
+	// "registry-1.docker.io"; we must do the same so the registry URL we
+	// build actually points at the OCI distribution API rather than the
+	// docker.com marketing website (which would return an HTML page and
+	// trigger a false-positive update detection).
+	if registry == "docker.io" || registry == "index.docker.io" {
+		registry = "registry-1.docker.io"
+	}
+
 	// Docker Hub official images: "nginx" → "library/nginx".
 	if registry == "registry-1.docker.io" && !strings.Contains(repository, "/") {
 		repository = "library/" + repository
@@ -135,6 +145,14 @@ func fetchDigestGET(manifestURL, token string) (string, error) {
 	if d := resp.Header.Get("docker-content-digest"); d != "" {
 		io.Copy(io.Discard, resp.Body)
 		return d, nil
+	}
+	// Guard against being redirected to a non-registry site (e.g. a marketing
+	// page). An HTML response body can never be a valid manifest, so hashing
+	// it would produce a fake digest that causes a persistent false-positive
+	// update notification.
+	if ct := resp.Header.Get("Content-Type"); strings.HasPrefix(ct, "text/html") {
+		io.Copy(io.Discard, resp.Body)
+		return "", fmt.Errorf("unexpected HTML response from registry (possible misconfigured registry URL)")
 	}
 	// Compute digest from body.
 	h := sha256.New()

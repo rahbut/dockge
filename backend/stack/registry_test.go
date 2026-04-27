@@ -16,6 +16,12 @@ func TestParseImageRef_LSCR(t *testing.T) {
 		{"nginx:latest", "registry-1.docker.io", "library/nginx", "latest"},
 		{"nginx", "registry-1.docker.io", "library/nginx", "latest"},
 		{"linuxserver/heimdall:latest", "registry-1.docker.io", "linuxserver/heimdall", "latest"},
+		// Docker Hub aliases — must be normalised to registry-1.docker.io so the
+		// manifest URL is built correctly (docker.io redirects to www.docker.com).
+		{"docker.io/searxng/searxng:latest", "registry-1.docker.io", "searxng/searxng", "latest"},
+		{"docker.io/searxng/searxng", "registry-1.docker.io", "searxng/searxng", "latest"},
+		{"docker.io/library/nginx:latest", "registry-1.docker.io", "library/nginx", "latest"},
+		{"index.docker.io/searxng/searxng:latest", "registry-1.docker.io", "searxng/searxng", "latest"},
 	}
 	for _, tt := range tests {
 		reg, repo, tag := ParseImageRef(tt.image)
